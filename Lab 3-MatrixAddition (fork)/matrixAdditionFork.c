@@ -14,5 +14,51 @@ static inline uint64_t gettime_ns()
 }
 
 int main(int argc, char* argv[]){
+    //Get values in matrix 1
+    int rows1, columns1;
+    FILE* mat1 = fopen(argv[1], "r");
+    fscanf(mat1, "%d", &rows1);
+    fscanf(mat1, "%d", &columns1);
+    int* matrix1 = malloc(sizeof(int) * rows1 * columns1);
+    for(int r = 0; r < rows1; r++) {
+        for(int c = 0; c < columns1; c++) {
+        	int value;
+            fscanf(mat1, "%d", &value);
+            matrix1[r * columns1 + c] = value;
+        }
+    }
+    fclose(mat1);
+
+    //Print matrix 1
+    printf("%s", "Matrix 1:");
+	for(int r = 0; r < rows1; r++){
+	  	printf("\n");
+	   	for(int c = 0; c < columns1; c++){
+	    	printf("%i ", matrix1[r * columns1 + c]);
+	    }
+	}
+    //Get values in matrix 2
+    int rows2, columns2;
+    FILE* mat2 = fopen(argv[2], "r");
+    fscanf(mat2, "%d", &rows2);
+    fscanf(mat2, "%d", &columns2);
+    int* matrix2 = malloc(sizeof(int) * rows2 * columns2);
+    for(int r = 0; r < rows2; r++) {
+        for(int c = 0; c < columns2; c++) {
+        	int value;
+            fscanf(mat2, "%d", &value);
+            matrix2[r * columns2 + c] = value;
+        }
+    }
+    fclose(mat2);
+
+    //Print matrix 2
+    printf("\n\n%s", "Matrix 2:");
+	for(int r = 0; r < rows2; r++){
+	  	printf("\n");
+	   	for(int c = 0; c < columns2; c++){
+	    	printf("%i ", matrix2[r * columns2 + c]);
+	    }
+	}
     return 0;
 }
