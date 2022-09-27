@@ -60,5 +60,13 @@ int main(int argc, char* argv[]){
 	    	printf("%i ", matrix2[r * columns2 + c]);
 	    }
 	}
+
+    //Check to see matrices are same size
+    if(rows1 != rows2){
+    	printf("%s\n", "Matrices are not of same size");
+    }
+    else{
+
+    }
     return 0;
 }
