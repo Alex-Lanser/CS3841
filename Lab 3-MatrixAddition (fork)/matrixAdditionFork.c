@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #define NS_PER_SEC 1000000000
 
@@ -66,7 +69,33 @@ int main(int argc, char* argv[]){
     	printf("%s\n", "Matrices are not of same size");
     }
     else{
+        uint64_t start = gettime_ns();
+        int* finalMatrix = malloc(sizeof(int) * rows1 * columns1);
+        int numRows[rows1];
+        for(int r = 0; r < rows1; r++){
+            numRows[r] = fork();
+            if(numRows[r] == 0){ //child
+                for(int c = 0; c < columns1; c++){
+                    finalMatrix[r * columns1 + c] = matrix1[r * columns1 + c] + matrix2[r * columns1 + c];
+                }
+            }
+            else if(numRows[r] > 0){ //parent
+                wait(0);
+            }
+        }
+        uint64_t end = gettime_ns();
 
+
+	    //Read data from space
+	    printf("\n\n%s", "Final Matrix:");
+	    for(int r = 0; r < rows1; r++){
+	    	printf("\n");
+	    	for(int c = 0; c < columns1; c++){
+	    		printf("%i ", finalMatrix[r * columns1 + c]);
+	    	}
+	    }
+        printf("\n\n%s%ld%s\n", "Addition took ", end-start, " nanoseconds");
+        free(finalMatrix);
     }
     return 0;
 }
