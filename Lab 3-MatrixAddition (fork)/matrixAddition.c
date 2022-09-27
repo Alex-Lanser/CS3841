@@ -67,7 +67,7 @@ int main(int argc, char* argv[]){
     else{
     	uint64_t start = gettime_ns();
 	    //Store data in space
-	    int* finalMatrix = malloc(sizeof(int) * rows1 * rows2);
+	    int* finalMatrix = malloc(sizeof(int) * rows1 * columns2);
 	    for(int r = 0; r < rows1; r++){
 	    	for(int c = 0; c < columns1; c++){
 	    		finalMatrix[r * columns1 + c] = matrix1[r * columns1 + c] + matrix2[r * columns1 + c]; //Add matrices together
@@ -84,6 +84,7 @@ int main(int argc, char* argv[]){
 	    	}
 	    }
 		printf("\n\n%s%ld%s\n", "Addition took ", end-start, " nanoseconds");
+		free(finalMatrix);
 	}
 	return 0;
 }
