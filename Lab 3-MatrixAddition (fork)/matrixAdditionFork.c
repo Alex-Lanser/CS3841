@@ -62,7 +62,7 @@ int main(int argc, char* argv[]){
 	}
 
     //Check to see matrices are same size
-    if(rows1 != rows2){
+    if(rows1 != rows2 && columns1 != columns2){
     	printf("%s\n", "Matrices are not of same size");
     }
     else{
