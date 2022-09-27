@@ -5,6 +5,7 @@
 
 #define NS_PER_SEC 1000000000
 
+//Get time in nanoseconds
 static inline uint64_t gettime_ns()
 {
     struct timespec ts;
