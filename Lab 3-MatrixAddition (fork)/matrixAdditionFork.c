@@ -9,14 +9,13 @@
 #define NS_PER_SEC 1000000000
 
 //Get time in nanoseconds
-static inline uint64_t gettime_ns()
-{
+static inline uint64_t gettime_ns() {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     return ts.tv_sec * NS_PER_SEC + ts.tv_nsec;
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[]) {
     //Get values in matrix 1
     int rows1, columns1;
     FILE* mat1 = fopen(argv[1], "r");
@@ -34,9 +33,9 @@ int main(int argc, char* argv[]){
 
     //Print matrix 1
     printf("%s", "Matrix 1:");
-	for(int r = 0; r < rows1; r++){
+	for(int r = 0; r < rows1; r++) {
 	  	printf("\n");
-	   	for(int c = 0; c < columns1; c++){
+	   	for(int c = 0; c < columns1; c++) {
 	    	printf("%i ", matrix1[r * columns1 + c]);
 	    }
 	}
@@ -59,27 +58,27 @@ int main(int argc, char* argv[]){
     printf("\n\n%s", "Matrix 2:");
 	for(int r = 0; r < rows2; r++){
 	  	printf("\n");
-	   	for(int c = 0; c < columns2; c++){
+	   	for(int c = 0; c < columns2; c++) {
 	    	printf("%i ", matrix2[r * columns2 + c]);
 	    }
 	}
 
     //Check to see matrices are same size
-    if(rows1 != rows2 && columns1 != columns2){
+    if(rows1 != rows2 && columns1 != columns2) {
     	printf("%s\n", "Matrices are not of same size");
     }
     else{
         uint64_t start = gettime_ns();
         int* finalMatrix = malloc(sizeof(int) * rows1 * columns1);
         int numRows[rows1];
-        for(int r = 0; r < rows1; r++){
+        for(int r = 0; r < rows1; r++) {
             numRows[r] = fork();
             if(numRows[r] == 0){ //child
-                for(int c = 0; c < columns1; c++){
+                for(int c = 0; c < columns1; c++) {
                     finalMatrix[r * columns1 + c] = matrix1[r * columns1 + c] + matrix2[r * columns1 + c];
                 }
             }
-            else if(numRows[r] > 0){ //parent
+            else if(numRows[r] > 0) { //parent
                 wait(0);
             }
         }
@@ -88,9 +87,9 @@ int main(int argc, char* argv[]){
 
 	    //Read data from space
 	    printf("\n\n%s", "Final Matrix:");
-	    for(int r = 0; r < rows1; r++){
+	    for(int r = 0; r < rows1; r++) {
 	    	printf("\n");
-	    	for(int c = 0; c < columns1; c++){
+	    	for(int c = 0; c < columns1; c++) {
 	    		printf("%i ", finalMatrix[r * columns1 + c]);
 	    	}
 	    }
