@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
             printf("\n");
             for (int c = 0; c < columns1; c++)
             {
-                //printf("%i ", mapped_space);
+                printf("%i ", mapped_space);
             }
         }
         printf("\n\n%s%ld%s\n", "Addition took ", end - start, " nanoseconds");
