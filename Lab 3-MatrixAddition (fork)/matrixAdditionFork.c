@@ -43,15 +43,16 @@ int main(int argc, char *argv[])
     fclose(mat1);
 
     // Print matrix 1
-    printf("%s", "Matrix 1:");
-    for (int r = 0; r < rows1; r++)
-    {
-        printf("\n");
-        for (int c = 0; c < columns1; c++)
-        {
-            printf("%i ", matrix1[r * columns1 + c]);
-        }
-    }
+    // printf("%s", "Matrix 1:");
+    // for (int r = 0; r < rows1; r++)
+    // {
+    //     printf("\n");
+    //     for (int c = 0; c < columns1; c++)
+    //     {
+    //         printf("%i ", matrix1[r * columns1 + c]);
+    //     }
+    // }
+
     // Get values in matrix 2
     int rows2, columns2;
     FILE *mat2 = fopen(argv[2], "r");
@@ -70,15 +71,15 @@ int main(int argc, char *argv[])
     fclose(mat2);
 
     // Print matrix 2
-    printf("\n\n%s", "Matrix 2:");
-    for (int r = 0; r < rows2; r++)
-    {
-        printf("\n");
-        for (int c = 0; c < columns2; c++)
-        {
-            printf("%i ", matrix2[r * columns2 + c]);
-        }
-    }
+    // printf("\n\n%s", "Matrix 2:");
+    // for (int r = 0; r < rows2; r++)
+    // {
+    //     printf("\n");
+    //     for (int c = 0; c < columns2; c++)
+    //     {
+    //         printf("%i ", matrix2[r * columns2 + c]);
+    //     }
+    // }
 
     // Check to see matrices are same size
     if (rows1 != rows2 && columns1 != columns2)
@@ -94,7 +95,7 @@ int main(int argc, char *argv[])
         unaltered memory segment. see https://github.com/p-w-rs/CS3841/blob/master/Examples/ipc/ipcshm1.c
         for an example of how to use shared memory
         */
-        int MAPPED_SIZE = 128;
+        int MAPPED_SIZE = rows1 * columns1;
         int shmfd = shm_open("/CS3841MEMORY", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
         if (shmfd == -1)
         {
@@ -112,10 +113,11 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
 
+        pid_t pid;
         uint64_t start = gettime_ns();
         for (int r = 0; r < rows1; r++)
         {
-            pid_t pid = fork();
+            pid = fork();
             if (pid < 0){ //error
                 perror("fork");
                 exit(EXIT_FAILURE);
@@ -125,7 +127,7 @@ int main(int argc, char *argv[])
                 for (int c = 0; c < columns1; c++)
                 {
                     // final matrix needs to be shared memory
-                    *mapped_space = matrix1[r * columns1 + c] + matrix2[r * columns1 + c];
+                    mapped_space[r * columns1 + c] = matrix1[r * columns1 + c] + matrix2[r * columns1 + c];
                 }
                 // after addition a child must free all malloced memory
                 // also it must call shared memory unmap
@@ -142,17 +144,17 @@ int main(int argc, char *argv[])
             doing so means we only have one child running at a time
             the parent should just immediately go up and fork for another child
             */
-            waitpid(pid, NULL, 0);
+            
         }
 
         /*
         This is where you want to make a loop where the parent will call waitpid(child[r], NULL, 0);
         */ 
-
+        waitpid(pid, NULL, 0);  
         uint64_t end = gettime_ns();
 
         // Read data from space
-        printf("\n\n%s", "Final Matrix:");
+        printf("\n%s", "Final Matrix:");
         for (int r = 0; r < rows1; r++)
         {
             printf("\n");
