@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        uint64_t start = gettime_ns();
+
         /*
         We need the final matrix to be shared memory otherwise each child will be
         modifying a different final matrix so the parent will end with an
@@ -105,13 +105,14 @@ int main(int argc, char *argv[])
         // Set the size of the shared memory segment
         ftruncate(shmfd, MAPPED_SIZE);
 
-        void *mapped_space = mmap(NULL, MAPPED_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
+        int *mapped_space = mmap(NULL, MAPPED_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
         if (mapped_space == MAP_FAILED)
         {
             printf("COULD NOT MMAP\n");
             exit(EXIT_FAILURE);
         }
 
+        uint64_t start = gettime_ns();
         for (int r = 0; r < rows1; r++)
         {
             pid_t pid = fork();
@@ -124,7 +125,7 @@ int main(int argc, char *argv[])
                 for (int c = 0; c < columns1; c++)
                 {
                     // final matrix needs to be shared memory
-                    mapped_space = matrix1[r * columns1 + c] + matrix2[r * columns1 + c];
+                    *mapped_space = matrix1[r * columns1 + c] + matrix2[r * columns1 + c];
                 }
                 // after addition a child must free all malloced memory
                 // also it must call shared memory unmap
@@ -141,12 +142,13 @@ int main(int argc, char *argv[])
             doing so means we only have one child running at a time
             the parent should just immediately go up and fork for another child
             */
+            waitpid(pid, NULL, 0);
         }
 
         /*
         This is where you want to make a loop where the parent will call waitpid(child[r], NULL, 0);
         */ 
-        waitpid(pid, NULL, 0);
+
         uint64_t end = gettime_ns();
 
         // Read data from space
@@ -156,7 +158,7 @@ int main(int argc, char *argv[])
             printf("\n");
             for (int c = 0; c < columns1; c++)
             {
-                printf("%i ", mapped_space);
+                printf("%i ", mapped_space[r * columns1 + c]);
             }
         }
         printf("\n\n%s%ld%s\n", "Addition took ", end - start, " nanoseconds");
