@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
                 //******* you can call exit() or just return 0;
                 munmap(mapped_space, MAPPED_SIZE);
                 close(shmfd);
-                exit();
+                exit(0);
             }
             /*
             we don't want the parent to wait here inside the fork loop
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
         // it is the last proces so it must also call shm_unlink
         munmap(mapped_space, MAPPED_SIZE);
         close(shmfd);
-        shm_unlink(shmfd);
+        shm_unlink("/CS3841MEMORY");
     }
     return 0;
 }
