@@ -5,6 +5,13 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+#include <fcntl.h> 
+#include <signal.h>
+#include <sys/mman.h>  
+#include <sys/types.h> 
+
+  
+
 
 #define NS_PER_SEC 1000000000
 
@@ -83,21 +90,41 @@ int main(int argc, char *argv[])
         uint64_t start = gettime_ns();
         /*
         We need the final matrix to be shared memory otherwise each child will be
-        modifying a different final matrix so thee parent will end with an
+        modifying a different final matrix so the parent will end with an
         unaltered memory segment. see https://github.com/p-w-rs/CS3841/blob/master/Examples/ipc/ipcshm1.c
         for an example of how to use shared memory
         */
-        int *finalMatrix = malloc(sizeof(int) * rows1 * columns1);
-        pid_t child[rows1];
+        int MAPPED_SIZE = 128;
+        int shmfd = shm_open("/CS3841MEMORY", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+        if (shmfd == -1)
+        {
+            printf("COULD NOT OPEN SHARED MEMORY SEGMENT\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // Set the size of the shared memory segment
+        ftruncate(shmfd, MAPPED_SIZE);
+
+        void *mapped_space = mmap(NULL, MAPPED_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
+        if (mapped_space == MAP_FAILED)
+        {
+            printf("COULD NOT MMAP\n");
+            exit(EXIT_FAILURE);
+        }
+
         for (int r = 0; r < rows1; r++)
         {
-            child[r] = fork();
-            if (child[r] == 0)
-            { // child
+            pid_t pid = fork();
+            if (pid < 0){ //error
+                perror("fork");
+                exit(EXIT_FAILURE);
+            }
+            else if (pid == 0) // child
+            { 
                 for (int c = 0; c < columns1; c++)
                 {
                     // final matrix needs to be shared memory
-                    finalMatrix[r * columns1 + c] = matrix1[r * columns1 + c] + matrix2[r * columns1 + c];
+                    mapped_space = matrix1[r * columns1 + c] + matrix2[r * columns1 + c];
                 }
                 // after addition a child must free all malloced memory
                 // also it must call shared memory unmap
@@ -105,21 +132,21 @@ int main(int argc, char *argv[])
                 //******* you must return after this or the child will not terminate
                 //******* instead he will continue and go through the loop
                 //******* you can call exit() or just return 0;
+                munmap(mapped_space, MAPPED_SIZE);
+                close(shmfd);
+                exit();
             }
             /*
             we don't want the parent to wait here inside the fork loop
             doing so means we only have one child running at a time
             the parent should just immediately go up and fork for another child
             */
-            else if (child[r] > 0)
-            { // parent
-                wait(0);
-            }
         }
 
         /*
         This is where you want to make a loop where the parent will call waitpid(child[r], NULL, 0);
-        */
+        */ 
+        waitpid(pid, NULL, 0);
         uint64_t end = gettime_ns();
 
         // Read data from space
@@ -129,7 +156,7 @@ int main(int argc, char *argv[])
             printf("\n");
             for (int c = 0; c < columns1; c++)
             {
-                printf("%i ", finalMatrix[r * columns1 + c]);
+                //printf("%i ", mapped_space);
             }
         }
         printf("\n\n%s%ld%s\n", "Addition took ", end - start, " nanoseconds");
@@ -137,7 +164,9 @@ int main(int argc, char *argv[])
         // also it must call shared memory unmap
         // also it must close the shared memory file descriptor
         // it is the last proces so it must also call shm_unlink
-        free(finalMatrix);
+        munmap(mapped_space, MAPPED_SIZE);
+        close(shmfd);
+        shm_unlink(shmfd);
     }
     return 0;
 }
