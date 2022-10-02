@@ -86,9 +86,8 @@ int main(int argc, char *argv[])
     }
 
     // Waiting for join threads after compute
-    for (i = 0; i < CORE * 2; i++)
+    for (int i = 0; i < CORE * 2; i++)
     {
-
         pthread_join(thread[i], NULL);
     }
 
