@@ -12,6 +12,7 @@ int rows2, columns2;
 int *matrix1;
 int *matrix2;
 int *finalMatrix;
+
 // Get time in nanoseconds
 static inline uint64_t gettime_ns()
 {
@@ -24,7 +25,7 @@ void *thread_routine()
 {
     for (int r = 0; r < rows1; r++)
     {
-        for (int c = 0; c < columns1; r++)
+        for (int c = 0; c < columns1; c++)
         {
             finalMatrix[r * columns1 + c] = matrix1[r * columns1 + c] + matrix2[r * columns1 + c];
         }
