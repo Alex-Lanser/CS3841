@@ -1,3 +1,9 @@
+/*
+ * Alex Lanser
+ * CS3841 - 011
+ * Lab 4 - Threaded Matrix Addition
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
