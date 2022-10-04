@@ -21,6 +21,7 @@ static inline uint64_t gettime_ns()
     return ts.tv_sec * NS_PER_SEC + ts.tv_nsec;
 }
 
+// Do the matrix addition for the threads
 void *thread_routine()
 {
     for (int r = 0; r < rows1; r++)
@@ -67,16 +68,19 @@ int main(int argc, char *argv[])
     }
     fclose(mat2);
 
+    // Check to make sure the matrices are the same size
     if (rows1 != rows2 && columns1 != columns2)
     {
         printf("%s\n", "Matrices are not of same size");
     }
+    // Matrices are the same size
     else
     {
         uint64_t start = gettime_ns();
         // Store data in space
         finalMatrix = malloc(sizeof(int) * rows1 * columns2);
         pthread_t thread[CORE * 2];
+        // Create threads and do the routine
         for (int i = 0; i < CORE * 2; i++)
         {
             if (pthread_create(&thread[i], NULL, thread_routine, NULL) == -1)
@@ -98,7 +102,6 @@ int main(int argc, char *argv[])
         for (int r = 0; r < rows1; r++)
         {
             printf("\n");
-            ;
             for (int c = 0; c < columns1; c++)
             {
                 printf("%i ", finalMatrix[r * columns1 + c]);
