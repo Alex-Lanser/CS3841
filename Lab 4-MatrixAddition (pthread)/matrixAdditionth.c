@@ -2,7 +2,7 @@
  * Alex Lanser
  * CS3841 - 011
  * Lab 4 - Threaded Matrix Addition
-*/
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +18,7 @@ int rows2, columns2;
 int *matrix1;
 int *matrix2;
 int *finalMatrix;
+int adds_per_thread;
 
 // Get time in nanoseconds
 static inline uint64_t gettime_ns()
@@ -28,15 +29,25 @@ static inline uint64_t gettime_ns()
 }
 
 // Do the matrix addition for the threads
-void *thread_routine()
+void *thread_routine(void *args)
 {
-    for (int r = 0; r < rows1; r++)
+    int overflow = (rows1 * columns1) % (CORE * 2);
+    int *start = (int *)args;
+    if (overflow > 0)
     {
-        for (int c = 0; c < columns1; c++)
+        for (int i = *start; i < *start + adds_per_thread + 1; i++)
         {
-            finalMatrix[r * columns1 + c] = matrix1[r * columns1 + c] + matrix2[r * columns1 + c];
+            finalMatrix[i] = matrix1[i] + matrix2[i];
         }
     }
+    else
+    {
+        for (int i = *start; i < *start + adds_per_thread; i++)
+        {
+            finalMatrix[i] = matrix1[i] + matrix2[i];
+        }
+    }
+    overflow--;
     return NULL;
 }
 
@@ -86,23 +97,24 @@ int main(int argc, char *argv[])
         // Store data in space
         finalMatrix = malloc(sizeof(int) * rows1 * columns2);
         pthread_t thread[CORE * 2];
-        // Create threads and do the routine
+        adds_per_thread = (rows1 * columns1) / (CORE * 2);
+        // Create CORE*2 threads and do the thread routine
         for (int i = 0; i < CORE * 2; i++)
         {
-            if (pthread_create(&thread[i], NULL, thread_routine, NULL) == -1)
+            int args = i * adds_per_thread;
+            if (pthread_create(&thread[i], NULL, thread_routine, (void *)&args) == -1)
             {
                 printf("COULD NOT CREATE THREAD");
                 exit(EXIT_FAILURE);
             }
         }
-
         // Wait for all threads to finish
         for (int i = 0; i < CORE * 2; i++)
         {
             pthread_join(thread[i], NULL);
         }
-        uint64_t end = gettime_ns();
 
+        uint64_t end = gettime_ns();
         // Print final matrix
         printf("\n%s", "Final Matrix:");
         for (int r = 0; r < rows1; r++)
