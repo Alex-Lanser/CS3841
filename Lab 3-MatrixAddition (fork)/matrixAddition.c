@@ -32,14 +32,16 @@ int main(int argc, char *argv[])
 	}
 	fclose(mat1);
 
-	// //Print matrix 1
-	// printf("%s", "Matrix 1:");
-	// for(int r = 0; r < rows1; r++){
-	//   	printf("\n");
-	//    	for(int c = 0; c < columns1; c++){
-	//     	printf("%i ", matrix1[r * columns1 + c]);
-	//     }
-	// }
+	// Print matrix 1
+/* 	printf("%s", "Matrix 1:");
+	for (int r = 0; r < rows1; r++)
+	{
+		printf("\n");
+		for (int c = 0; c < columns1; c++)
+		{
+			printf("%i ", matrix1[r * columns1 + c]);
+		}
+	} */
 
 	// Get values in matrix 2
 	int rows2, columns2;
@@ -58,14 +60,16 @@ int main(int argc, char *argv[])
 	}
 	fclose(mat2);
 
-	// //Print matrix 2
-	// printf("\n\n%s", "Matrix 2:");
-	// for(int r = 0; r < rows2; r++){
-	//   	printf("\n");
-	//    	for(int c = 0; c < columns2; c++){
-	//     	printf("%i ", matrix2[r * columns2 + c]);
-	//     }
-	// }
+	// Print matrix 2
+/* 	printf("\n\n%s", "Matrix 2:");
+	for (int r = 0; r < rows2; r++)
+	{
+		printf("\n");
+		for (int c = 0; c < columns2; c++)
+		{
+			printf("%i ", matrix2[r * columns2 + c]);
+		}
+	} */
 
 	if (rows1 != rows2 && columns1 != columns2)
 	{

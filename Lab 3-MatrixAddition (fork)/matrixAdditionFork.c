@@ -5,13 +5,10 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
-#include <fcntl.h> 
+#include <fcntl.h>
 #include <signal.h>
-#include <sys/mman.h>  
-#include <sys/types.h> 
-
-  
-
+#include <sys/mman.h>
+#include <sys/types.h>
 
 #define NS_PER_SEC 1000000000
 
@@ -43,15 +40,15 @@ int main(int argc, char *argv[])
     fclose(mat1);
 
     // Print matrix 1
-    // printf("%s", "Matrix 1:");
-    // for (int r = 0; r < rows1; r++)
-    // {
-    //     printf("\n");
-    //     for (int c = 0; c < columns1; c++)
-    //     {
-    //         printf("%i ", matrix1[r * columns1 + c]);
-    //     }
-    // }
+    printf("%s", "Matrix 1:");
+    for (int r = 0; r < rows1; r++)
+    {
+        printf("\n");
+        for (int c = 0; c < columns1; c++)
+        {
+            printf("%i ", matrix1[r * columns1 + c]);
+        }
+    }
 
     // Get values in matrix 2
     int rows2, columns2;
@@ -71,15 +68,15 @@ int main(int argc, char *argv[])
     fclose(mat2);
 
     // Print matrix 2
-    // printf("\n\n%s", "Matrix 2:");
-    // for (int r = 0; r < rows2; r++)
-    // {
-    //     printf("\n");
-    //     for (int c = 0; c < columns2; c++)
-    //     {
-    //         printf("%i ", matrix2[r * columns2 + c]);
-    //     }
-    // }
+/*     printf("\n\n%s", "Matrix 2:");
+    for (int r = 0; r < rows2; r++)
+    {
+        printf("\n");
+        for (int c = 0; c < columns2; c++)
+        {
+            printf("%i ", matrix2[r * columns2 + c]);
+        }
+    } */
 
     // Check to see matrices are same size
     if (rows1 != rows2 && columns1 != columns2)
@@ -118,12 +115,13 @@ int main(int argc, char *argv[])
         for (int r = 0; r < rows1; r++)
         {
             pid = fork();
-            if (pid < 0){ //error
+            if (pid < 0)
+            { // error
                 perror("fork");
                 exit(EXIT_FAILURE);
             }
             else if (pid == 0) // child
-            { 
+            {
                 for (int c = 0; c < columns1; c++)
                 {
                     // final matrix needs to be shared memory
@@ -144,13 +142,12 @@ int main(int argc, char *argv[])
             doing so means we only have one child running at a time
             the parent should just immediately go up and fork for another child
             */
-            
         }
 
         /*
         This is where you want to make a loop where the parent will call waitpid(child[r], NULL, 0);
-        */ 
-        waitpid(pid, NULL, 0);  
+        */
+        waitpid(pid, NULL, 0);
         uint64_t end = gettime_ns();
 
         // Read data from space
