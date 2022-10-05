@@ -31,8 +31,8 @@ static inline uint64_t gettime_ns()
 // Do the matrix addition for the threads
 void *thread_routine(void *args)
 {
-    int *start = (int *)args;
-    for (int i = *start; i < *start + adds_per_thread; i++)
+    int start = *(int *)args;
+    for (int i = start; i < start + adds_per_thread; i++)
     {
         finalMatrix[i] = matrix1[i] + matrix2[i];
     }
@@ -81,26 +81,34 @@ int main(int argc, char *argv[])
     // Matrices are the same size
     else
     {
-        uint64_t start = gettime_ns();
+
         // Store data in space
         finalMatrix = malloc(sizeof(int) * rows1 * columns2);
         pthread_t thread[CORE * 2];
+        int args[CORE * 2 - 1];
         adds_per_thread = (rows1 * columns1) / (CORE * 2);
-
         // Create CORE*2 threads and do the thread routine
+        uint64_t start = gettime_ns();
         for (int i = 0; i < CORE * 2; i++)
         {
-            int args = i * adds_per_thread;
-            if (pthread_create(&thread[i], NULL, thread_routine, (void *)&args) == -1)
+            args[i] = i * adds_per_thread;
+            if (pthread_create(&thread[i], NULL, thread_routine, (void *)&args[i]) == -1)
             {
                 printf("COULD NOT CREATE THREAD");
                 exit(EXIT_FAILURE);
             }
         }
+
         // Wait for all threads to finish
         for (int i = 0; i < CORE * 2; i++)
         {
             pthread_join(thread[i], NULL);
+        }
+
+        // Add the remaining sessions that the threads did not do
+        for (int i = args[CORE * 2 - 1] + adds_per_thread; i < rows1 * columns1; i++)
+        {
+            finalMatrix[i] = matrix1[i] + matrix2[i];
         }
 
         uint64_t end = gettime_ns();
