@@ -84,8 +84,7 @@ int main()
 
 		//Quit command
 		if(strcmp(user_input, "quit") == 0){
-			printf("%s\n", "Quitting...");
-			break;
+			return 0;
 		}
 
 		// Chop the input into command strings
