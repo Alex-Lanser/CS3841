@@ -19,7 +19,6 @@ int *matrix1;
 int *matrix2;
 int *finalMatrix;
 int adds_per_thread;
-int overflow;
 
 // Get time in nanoseconds
 static inline uint64_t gettime_ns()
@@ -33,21 +32,10 @@ static inline uint64_t gettime_ns()
 void *thread_routine(void *args)
 {
     int *start = (int *)args;
-    if (overflow > 0)
+    for (int i = *start; i < *start + adds_per_thread; i++)
     {
-        for (int i = *start; i < *start + adds_per_thread + 1; i++)
-        {
-            finalMatrix[i] = matrix1[i] + matrix2[i];
-        }
+        finalMatrix[i] = matrix1[i] + matrix2[i];
     }
-    else
-    {
-        for (int i = *start; i < *start + adds_per_thread; i++)
-        {
-            finalMatrix[i] = matrix1[i] + matrix2[i];
-        }
-    }
-    overflow--;
     return NULL;
 }
 
@@ -99,8 +87,6 @@ int main(int argc, char *argv[])
         pthread_t thread[CORE * 2];
         adds_per_thread = (rows1 * columns1) / (CORE * 2);
 
-        // Get how many threads have to do one more addition
-        overflow = (rows1 * columns1) % (CORE * 2);
         // Create CORE*2 threads and do the thread routine
         for (int i = 0; i < CORE * 2; i++)
         {
