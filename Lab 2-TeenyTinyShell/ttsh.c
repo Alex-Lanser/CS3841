@@ -108,12 +108,10 @@ int main()
 			int x = 0;
 			int argCount = 0;
 			//Get command from full line
-			token[x] = strtok(cmd_strs[i], " "); 
-			x++;
+			token[argCount] = strtok(cmd_strs[i], " "); 
 			//Separate the args
-			while(token[x] != NULL){
-				token[x++] = strtok(NULL, " ");
-				argCount++;
+			while(token[argCount] != NULL){
+				token[++argCount] = strtok(NULL, " ");
 			}
 
 			if(argCount > 10){
