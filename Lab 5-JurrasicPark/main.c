@@ -38,10 +38,12 @@ void *carTask(void *args);
 void *driverTask(void *args);
 void *visitorTask(void *args);
 
-sem_t tickets;
-sem_t getPassenger;
-sem_t seatTaken;
-sem_t passengerSeated;
+int randomNumber(int lower, int upper)
+{
+    srand(time(0));
+    int num = (rand() % (upper - lower + 1)) + lower;
+    return num;
+}
 
 int main(int argc, char *argv[])
 {
@@ -57,34 +59,59 @@ int main(int argc, char *argv[])
     printf("\n\nWelcome to Jurassic Park\n\n");
 
     //?? create car, driver, and visitor tasks here
-    void *carTask(void *args)
+    int visitors[NUM_VISITORS];
+    for (int i = 0; i < NUM_VISITORS; i++)
     {
-        pthread_mutex_lock(&fillSeat[carID]);
-        sem_post(&getPassenger);
-        sem_wait(&seatTaken);
-        sem_post(&passengerSeated);
-        
-        if(&passengerSeated == 3){
-            pthread_mutex_lock(&needDriverMutex);
-            sem_post(&wakeupDriver);
-
-            pthread_mutex_unlock(&needDriverMutex);
-        }
-
-        pthread_mutex_unlock(&seatFilled[carID]);
-        pthread_mutex_lock(&rideOver[myID]);
-        return 0;
+        pthread_create(&visitors[i], NULL, visitorTask, NULL);
+        sleep(randomNumber(1, 2));
     }
 
-    void *driverTask(void *args)
+    int drivers[NUM_DRIVERS];
+    for (int i = 0; i < NUM_DRIVERS; i++)
     {
-        return 0;
+        pthread_create(&drivers[i], NULL, driverTask, NULL);
     }
 
-    void *visitorTask(void *args)
+    int cars[NUM_CARS];
+    for (int i = 0; i < NUM_CARS; i++)
     {
-        return 0;
+        pthread_create(&cars[i], NULL, carTask, NULL);
     }
+
     pthread_join(parkTask, NULL);
+    return 0;
+}
+
+void *carTask(void *args)
+{
+    return 0;
+}
+
+void *driverTask(void *args)
+{
+    return 0;
+}
+
+void *visitorTask(void *args)
+{
+    // Add visitors to the outside of park
+    pthread_mutex_lock(&parkMutex);
+    myPark.numOutsidePark++;
+    pthread_mutex_unlock(&parkMutex);
+
+    sleep(randomNumber(1, 3));
+    // Check to see if the park is full
+    if (myPark.numInPark <= 20)
+    {
+        pthread_mutex_lock(&parkMutex);
+        myPark.numOutsidePark--;
+        myPark.numInPark++;
+        myPark.numInTicketLine++;
+        pthread_mutex_unlock(&parkMutex);
+    }
+    // Park is full
+    else
+    {
+    }
     return 0;
 }
