@@ -27,7 +27,7 @@
 #include "park.h"
 
 // Jurassic Park
-extern int begin;
+volatile int begin;
 extern JPARK myPark;
 extern pthread_mutex_t parkMutex;            // mutex park variable access
 extern pthread_mutex_t fillSeat[NUM_CARS];   // (signal) seat ready to fill
@@ -37,6 +37,11 @@ extern pthread_mutex_t rideOver[NUM_CARS];   // (signal) ride over
 void *carTask(void *args);
 void *driverTask(void *args);
 void *visitorTask(void *args);
+
+sem_t tickets;
+sem_t getPassenger;
+sem_t seatTaken;
+sem_t passengerSeated;
 
 int main(int argc, char *argv[])
 {
@@ -52,7 +57,34 @@ int main(int argc, char *argv[])
     printf("\n\nWelcome to Jurassic Park\n\n");
 
     //?? create car, driver, and visitor tasks here
+    void *carTask(void *args)
+    {
+        pthread_mutex_lock(&fillSeat[carID]);
+        sem_post(&getPassenger);
+        sem_wait(&seatTaken);
+        sem_post(&passengerSeated);
+        
+        if(&passengerSeated == 3){
+            pthread_mutex_lock(&needDriverMutex);
+            sem_post(&wakeupDriver);
 
+            pthread_mutex_unlock(&needDriverMutex);
+        }
+
+        pthread_mutex_unlock(&seatFilled[carID]);
+        pthread_mutex_lock(&rideOver[myID]);
+        return 0;
+    }
+
+    void *driverTask(void *args)
+    {
+        return 0;
+    }
+
+    void *visitorTask(void *args)
+    {
+        return 0;
+    }
     pthread_join(parkTask, NULL);
     return 0;
 }
