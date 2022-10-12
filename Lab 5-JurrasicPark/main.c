@@ -108,6 +108,68 @@ void *visitorTask(void *args)
         myPark.numInPark++;
         myPark.numInTicketLine++;
         pthread_mutex_unlock(&parkMutex);
+
+        sleep(randomNumber(1, 3));
+
+        pthread_mutex_lock(&parkMutex);
+        myPark.numInTicketLine--;
+        myPark.numInMuseumLine++;
+        pthread_mutex_unlock(&parkMutex);
+
+        sleep(randomNumber(1, 3));
+        // Check to see if museum is full
+        if (myPark.numInMuseum <= 3)
+        {
+            pthread_mutex_lock(&parkMutex);
+            myPark.numInMuseumLine--;
+            myPark.numInMuseum++;
+            pthread_mutex_unlock(&parkMutex);
+        }
+        // Museum is full
+        else
+        {
+        }
+
+        sleep(randomNumber(1, 3));
+
+        pthread_mutex_lock(&parkMutex);
+        myPark.numInMuseum--;
+        myPark.numInCarLine++;
+        pthread_mutex_unlock(&parkMutex);
+
+        // Wait for the car to go around
+        myPark.numInCarLine--;
+        myPark.numInCars++;
+
+        sleep(randomNumber(1, 3));
+
+        pthread_mutex_lock(&parkMutex);
+        myPark.numInCars--;
+        myPark.numInGiftLine++;
+        pthread_mutex_unlock(&parkMutex);
+
+        sleep(randomNumber(1, 3));
+
+        // Check to see if giftshop is full
+        if(myPark.numInGiftShop <= 3)
+        {
+            pthread_mutex_lock(&parkMutex);
+            myPark.numInGiftLine--;
+            myPark.numInGiftShop++;
+            pthread_mutex_unlock(&parkMutex);
+        }
+        // Giftshop full
+        else
+        {
+        }
+        
+        sleep(randomNumber(1, 3));
+
+        pthread_mutex_lock(&parkMutex);
+        myPark.numInGiftShop--;
+        myPark.numExitedPark++;
+        myPark.numInPark--;
+        pthread_mutex_unlock(&parkMutex);
     }
     // Park is full
     else
