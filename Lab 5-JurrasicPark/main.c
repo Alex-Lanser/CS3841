@@ -38,6 +38,17 @@ void *carTask(void *args);
 void *driverTask(void *args);
 void *visitorTask(void *args);
 
+sem_t needTicket;
+sem_t wakeupDriver;
+sem_t ticketReady;
+sem_t buyTicket;
+sem_t getPassenger;
+sem_t seatTaken;
+sem_t passengerSeated;
+
+pthread_mutex_t getTicketMutex;
+pthread_mutex_t needDriverMutex;
+
 int randomNumber(int lower, int upper)
 {
     srand(time(0));
