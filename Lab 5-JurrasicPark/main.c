@@ -41,6 +41,16 @@ void *visitorTask(void *args);
 sem_t room_in_park;
 sem_t room_in_museum;
 sem_t room_in_giftshop;
+sem_t tickets;
+
+sem_t needTicket;
+sem_t wakeupDriver;
+sem_t ticketReady;
+sem_t buyTicket;
+
+sem_t getPassenger;
+sem_t seatTaken;
+sem_t passengerSeated;
 
 pthread_mutex_t getTicketMutex;
 pthread_mutex_t needDriverMutex;
@@ -82,7 +92,7 @@ int main(int argc, char *argv[])
     int cars[NUM_CARS];
     for (int i = 0; i < NUM_CARS; i++)
     {
-        pthread_create(&cars[i], NULL, carTask, NULL);
+        pthread_create(&cars[i], NULL, carTask, (void*) &i);
     }
 
     pthread_join(parkTask, NULL);
@@ -91,6 +101,25 @@ int main(int argc, char *argv[])
 
 void *carTask(void *args)
 {
+    sem_init(&getPassenger, 0, 3);
+    sem_init(&seatTaken, 0, 3);
+    sem_init(&passengerSeated, 0, 3);
+    sem_init(&wakeupDriver, 0, 4);
+    int carID = *(int *)args;
+
+    pthread_mutex_lock(&fillSeat[carID]);
+    sem_post(&getPassenger);
+    sem_wait(&seatTaken);
+
+    sem_post(&passengerSeated);
+
+    pthread_mutex_lock(&needDriverMutex);
+    sem_post(&wakeupDriver);
+
+    pthread_mutex_unlock(&needDriverMutex);
+    pthread_mutex_unlock(&fillSeat[carID]);
+
+
     return 0;
 }
 
@@ -104,6 +133,7 @@ void *visitorTask(void *args)
     sem_init(&room_in_park, 0, 20);
     sem_init(&room_in_museum, 0, 3);
     sem_init(&room_in_giftshop, 0, 3);
+    sem_init(&tickets, 0, MAX_TICKETS);
 
     // Add visitors to the outside of park
     pthread_mutex_lock(&parkMutex);
@@ -114,7 +144,6 @@ void *visitorTask(void *args)
 
     // Check to see if the park is full
     sem_wait(&room_in_park);
-    printf("got here");
     pthread_mutex_lock(&parkMutex);
     myPark.numOutsidePark--;
     myPark.numInPark++;
@@ -139,15 +168,20 @@ void *visitorTask(void *args)
 
     sleep(randomNumber(1, 3));
 
-    pthread_mutex_lock(&parkMutex);
     sem_post(&room_in_museum);
+    pthread_mutex_lock(&parkMutex);
     myPark.numInMuseum--;
     myPark.numInCarLine++;
     pthread_mutex_unlock(&parkMutex);
 
+    sleep(randomNumber(1, 3));
+
     // Wait for the car to go around
+    sem_post(&tickets);
+    pthread_mutex_lock(&parkMutex);
     myPark.numInCarLine--;
     myPark.numInCars++;
+    pthread_mutex_unlock(&parkMutex);
 
     sleep(randomNumber(1, 3));
 
