@@ -38,6 +38,10 @@ void *carTask(void *args);
 void *driverTask(void *args);
 void *visitorTask(void *args);
 
+sem_t room_in_park;
+sem_t room_in_giftshop;
+sem_t room_in_museum;
+
 int randomNumber(int lower, int upper)
 {
     srand(time(0));
@@ -94,86 +98,78 @@ void *driverTask(void *args)
 
 void *visitorTask(void *args)
 {
+    sem_init(&room_in_park, 0, 20);
+    sem_init(&room_in_museum, 0, 3);
+    sem_init(&room_in_giftshop, 0, 3);
+
     // Add visitors to the outside of park
     pthread_mutex_lock(&parkMutex);
     myPark.numOutsidePark++;
     pthread_mutex_unlock(&parkMutex);
 
     sleep(randomNumber(1, 3));
+
     // Check to see if the park is full
-    if (myPark.numInPark <= 20)
-    {
-        pthread_mutex_lock(&parkMutex);
-        myPark.numOutsidePark--;
-        myPark.numInPark++;
-        myPark.numInTicketLine++;
-        pthread_mutex_unlock(&parkMutex);
+    sem_wait(&room_in_park);
+    printf("got here");
+    pthread_mutex_lock(&parkMutex);
+    myPark.numOutsidePark--;
+    myPark.numInPark++;
+    myPark.numInTicketLine++;
+    pthread_mutex_unlock(&parkMutex);
 
-        sleep(randomNumber(1, 3));
+    sleep(randomNumber(1, 3));
 
-        pthread_mutex_lock(&parkMutex);
-        myPark.numInTicketLine--;
-        myPark.numInMuseumLine++;
-        pthread_mutex_unlock(&parkMutex);
+    pthread_mutex_lock(&parkMutex);
+    myPark.numInTicketLine--;
+    myPark.numInMuseumLine++;
+    pthread_mutex_unlock(&parkMutex);
 
-        sleep(randomNumber(1, 3));
-        // Check to see if museum is full
-        if (myPark.numInMuseum <= 3)
-        {
-            pthread_mutex_lock(&parkMutex);
-            myPark.numInMuseumLine--;
-            myPark.numInMuseum++;
-            pthread_mutex_unlock(&parkMutex);
-        }
-        // Museum is full
-        else
-        {
-        }
+    sleep(randomNumber(1, 3));
 
-        sleep(randomNumber(1, 3));
+    // Check to see if museum is full
+    sem_wait(&room_in_museum);
+    pthread_mutex_lock(&parkMutex);
+    myPark.numInMuseumLine--;
+    myPark.numInMuseum++;
+    pthread_mutex_unlock(&parkMutex);
 
-        pthread_mutex_lock(&parkMutex);
-        myPark.numInMuseum--;
-        myPark.numInCarLine++;
-        pthread_mutex_unlock(&parkMutex);
+    sleep(randomNumber(1, 3));
 
-        // Wait for the car to go around
-        myPark.numInCarLine--;
-        myPark.numInCars++;
+    pthread_mutex_lock(&parkMutex);
+    sem_post(&room_in_museum);
+    myPark.numInMuseum--;
+    myPark.numInCarLine++;
+    pthread_mutex_unlock(&parkMutex);
 
-        sleep(randomNumber(1, 3));
+    // Wait for the car to go around
+    myPark.numInCarLine--;
+    myPark.numInCars++;
 
-        pthread_mutex_lock(&parkMutex);
-        myPark.numInCars--;
-        myPark.numInGiftLine++;
-        pthread_mutex_unlock(&parkMutex);
+    sleep(randomNumber(1, 3));
 
-        sleep(randomNumber(1, 3));
+    pthread_mutex_lock(&parkMutex);
+    myPark.numInCars--;
+    myPark.numInGiftLine++;
+    pthread_mutex_unlock(&parkMutex);
 
-        // Check to see if giftshop is full
-        if(myPark.numInGiftShop <= 3)
-        {
-            pthread_mutex_lock(&parkMutex);
-            myPark.numInGiftLine--;
-            myPark.numInGiftShop++;
-            pthread_mutex_unlock(&parkMutex);
-        }
-        // Giftshop full
-        else
-        {
-        }
-        
-        sleep(randomNumber(1, 3));
+    sleep(randomNumber(1, 3));
 
-        pthread_mutex_lock(&parkMutex);
-        myPark.numInGiftShop--;
-        myPark.numExitedPark++;
-        myPark.numInPark--;
-        pthread_mutex_unlock(&parkMutex);
-    }
-    // Park is full
-    else
-    {
-    }
+    // Check to see if giftshop is full
+    sem_wait(&room_in_giftshop);
+    pthread_mutex_lock(&parkMutex);
+    myPark.numInGiftLine--;
+    myPark.numInGiftShop++;
+    pthread_mutex_unlock(&parkMutex);
+
+    sleep(randomNumber(1, 3));
+
+    pthread_mutex_lock(&parkMutex);
+    sem_post(&room_in_giftshop);
+    myPark.numInGiftShop--;
+    myPark.numExitedPark++;
+    myPark.numInPark--;
+    pthread_mutex_unlock(&parkMutex);
+
     return 0;
 }
