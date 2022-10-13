@@ -39,8 +39,11 @@ void *driverTask(void *args);
 void *visitorTask(void *args);
 
 sem_t room_in_park;
-sem_t room_in_giftshop;
 sem_t room_in_museum;
+sem_t room_in_giftshop;
+
+pthread_mutex_t getTicketMutex;
+pthread_mutex_t needDriverMutex;
 
 int randomNumber(int lower, int upper)
 {
