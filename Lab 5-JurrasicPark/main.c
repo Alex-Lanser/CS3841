@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
     // start park
     pthread_t parkTask;
     pthread_create(&parkTask, NULL, jurassicTask, NULL);
-    
+
     sem_init(&room_in_park, 0, 20);
     sem_init(&room_in_museum, 0, 3);
     sem_init(&room_in_giftshop, 0, 3);
@@ -176,20 +176,20 @@ void *visitorTask(void *args)
 
     sleep(randomNumber(1, 3));
 
-    sem_post(&room_in_museum);
     pthread_mutex_lock(&parkMutex);
     myPark.numInMuseum--;
     myPark.numInCarLine++;
     pthread_mutex_unlock(&parkMutex);
+    sem_post(&room_in_museum);
 
     sleep(randomNumber(1, 3));
 
     // Wait for the car to go around
-    sem_post(&tickets);
     pthread_mutex_lock(&parkMutex);
     myPark.numInCarLine--;
     myPark.numInCars++;
     pthread_mutex_unlock(&parkMutex);
+    sem_post(&tickets);
 
     sleep(randomNumber(1, 3));
 
@@ -210,11 +210,11 @@ void *visitorTask(void *args)
     sleep(randomNumber(1, 3));
 
     pthread_mutex_lock(&parkMutex);
-    sem_post(&room_in_giftshop);
     myPark.numInGiftShop--;
     myPark.numExitedPark++;
     myPark.numInPark--;
     pthread_mutex_unlock(&parkMutex);
+    sem_post(&room_in_giftshop);
 
     sem_post(&room_in_park);
 
