@@ -74,6 +74,9 @@ int main(int argc, char *argv[])
     sem_init(&room_in_giftshop, 0, 3);
     sem_init(&tickets, 0, MAX_TICKETS);
 
+    pthread_mutex_init(&getTicketMutex, NULL);
+    pthread_mutex_init(&needDriverMutex, NULL);
+
     // wait for park to get initialized...
     while (!begin)
     {
@@ -84,23 +87,24 @@ int main(int argc, char *argv[])
     int visitors[NUM_VISITORS];
     for (int i = 0; i < NUM_VISITORS; i++)
     {
-        pthread_create(&visitors[i], NULL, visitorTask, NULL);
+        pthread_create((void*)&visitors[i], NULL, visitorTask, NULL);
         sleep(randomNumber(1, 2));
     }
 
     int drivers[NUM_DRIVERS];
     for (int i = 0; i < NUM_DRIVERS; i++)
     {
-        pthread_create(&drivers[i], NULL, driverTask, NULL);
+        pthread_create((void*)&drivers[i], NULL, driverTask, (void*)&i);
     }
 
     int cars[NUM_CARS];
     for (int i = 0; i < NUM_CARS; i++)
     {
-        pthread_create(&cars[i], NULL, carTask, (void *)&i);
+        pthread_create((void*)&cars[i], NULL, carTask, (void *)&i);
     }
 
     pthread_join(parkTask, NULL);
+
     return 0;
 }
 
@@ -129,11 +133,17 @@ void *carTask(void *args)
 
 void *driverTask(void *args)
 {
+    //int driverID = *(int *)args;
     return 0;
 }
 
 void *visitorTask(void *args)
 {
+    sem_init(&needTicket, 0, MAX_TICKETS);
+    sem_init(&wakeupDriver, 0, NUM_DRIVERS);
+    sem_init(&ticketReady, 0, MAX_TICKETS);
+    sem_init(&needTicket, 0, MAX_TICKETS);
+    sem_init(&buyTicket, 0, MAX_TICKETS);
 
     // Add visitors to the outside of park
     pthread_mutex_lock(&parkMutex);
@@ -150,6 +160,7 @@ void *visitorTask(void *args)
     myPark.numInTicketLine++;
     pthread_mutex_unlock(&parkMutex);
 
+    // Get ticket
     pthread_mutex_lock(&getTicketMutex);
     sem_post(&needTicket);
     sem_post(&wakeupDriver);
@@ -162,6 +173,7 @@ void *visitorTask(void *args)
 
     pthread_mutex_lock(&parkMutex);
     myPark.numInTicketLine--;
+    myPark.numTicketsAvailable--;
     myPark.numInMuseumLine++;
     pthread_mutex_unlock(&parkMutex);
 
@@ -188,6 +200,8 @@ void *visitorTask(void *args)
     pthread_mutex_lock(&parkMutex);
     myPark.numInCarLine--;
     myPark.numInCars++;
+    myPark.numTicketsAvailable++;
+    myPark.numRidesTaken++;
     pthread_mutex_unlock(&parkMutex);
     sem_post(&tickets);
 
