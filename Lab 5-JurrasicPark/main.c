@@ -68,6 +68,8 @@ int main(int argc, char *argv[])
     // start park
     pthread_t parkTask;
     pthread_create(&parkTask, NULL, jurassicTask, NULL);
+    pthread_mutex_init(&getTicketMutex, NULL);
+    pthread_mutex_init(&needDriverMutex, NULL);
 
     sem_init(&room_in_park, 0, 20);
     sem_init(&room_in_museum, 0, 3);
@@ -79,10 +81,6 @@ int main(int argc, char *argv[])
     sem_init(&needTicket, 0, MAX_TICKETS);
     sem_init(&buyTicket, 0, MAX_TICKETS);
 
-
-    pthread_mutex_init(&getTicketMutex, NULL);
-    pthread_mutex_init(&needDriverMutex, NULL);
-
     // wait for park to get initialized...
     while (!begin)
     {
@@ -93,20 +91,20 @@ int main(int argc, char *argv[])
     int visitors[NUM_VISITORS];
     for (int i = 0; i < NUM_VISITORS; i++)
     {
-        pthread_create((void*)&visitors[i], NULL, visitorTask, NULL);
+        pthread_create((void *)&visitors[i], NULL, visitorTask, NULL);
         sleep(randomNumber(1, 2));
     }
 
     int drivers[NUM_DRIVERS];
     for (int i = 0; i < NUM_DRIVERS; i++)
     {
-        pthread_create((void*)&drivers[i], NULL, driverTask, (void*)&i);
+        pthread_create((void *)&drivers[i], NULL, driverTask, (void *)&i);
     }
 
     int cars[NUM_CARS];
     for (int i = 0; i < NUM_CARS; i++)
     {
-        pthread_create((void*)&cars[i], NULL, carTask, (void *)&i);
+        pthread_create((void *)&cars[i], NULL, carTask, (void *)&i);
     }
 
     pthread_join(parkTask, NULL);
@@ -139,7 +137,7 @@ void *carTask(void *args)
 
 void *driverTask(void *args)
 {
-    //int driverID = *(int *)args;
+    // int driverID = *(int *)args;
     return 0;
 }
 
