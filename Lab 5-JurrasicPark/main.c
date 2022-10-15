@@ -73,6 +73,12 @@ int main(int argc, char *argv[])
     sem_init(&room_in_museum, 0, 3);
     sem_init(&room_in_giftshop, 0, 3);
     sem_init(&tickets, 0, MAX_TICKETS);
+    sem_init(&needTicket, 0, MAX_TICKETS);
+    sem_init(&wakeupDriver, 0, NUM_DRIVERS);
+    sem_init(&ticketReady, 0, MAX_TICKETS);
+    sem_init(&needTicket, 0, MAX_TICKETS);
+    sem_init(&buyTicket, 0, MAX_TICKETS);
+
 
     pthread_mutex_init(&getTicketMutex, NULL);
     pthread_mutex_init(&needDriverMutex, NULL);
@@ -139,12 +145,6 @@ void *driverTask(void *args)
 
 void *visitorTask(void *args)
 {
-    sem_init(&needTicket, 0, MAX_TICKETS);
-    sem_init(&wakeupDriver, 0, NUM_DRIVERS);
-    sem_init(&ticketReady, 0, MAX_TICKETS);
-    sem_init(&needTicket, 0, MAX_TICKETS);
-    sem_init(&buyTicket, 0, MAX_TICKETS);
-
     // Add visitors to the outside of park
     pthread_mutex_lock(&parkMutex);
     myPark.numOutsidePark++;
