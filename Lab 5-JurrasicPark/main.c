@@ -77,6 +77,17 @@ int main(int argc, char *argv[])
     pthread_mutex_init(&getTicketMutex, NULL);
     pthread_mutex_init(&needDriverMutex, NULL);
 
+    sem_init(&getPassenger, 0, 0);    // Signal semaphore
+    sem_init(&seatTaken, 0, 0);       // Signal semaphore
+    sem_init(&passengerSeated, 0, 0); // Signal semaphore
+    sem_init(&wakeupDriver, 0, 0);    // Signal semaphore
+
+    sem_init(&needTicket, 0, MAX_TICKETS);
+    sem_init(&wakeupDriver, 0, NUM_DRIVERS);
+    sem_init(&ticketReady, 0, MAX_TICKETS);
+    sem_init(&needTicket, 0, MAX_TICKETS);
+    sem_init(&buyTicket, 0, MAX_TICKETS);
+
     // wait for park to get initialized...
     while (!begin)
     {
@@ -87,20 +98,20 @@ int main(int argc, char *argv[])
     int visitors[NUM_VISITORS];
     for (int i = 0; i < NUM_VISITORS; i++)
     {
-        pthread_create((void*)&visitors[i], NULL, visitorTask, NULL);
+        pthread_create((void *)&visitors[i], NULL, visitorTask, NULL);
         sleep(randomNumber(1, 2));
     }
 
     int drivers[NUM_DRIVERS];
     for (int i = 0; i < NUM_DRIVERS; i++)
     {
-        pthread_create((void*)&drivers[i], NULL, driverTask, (void*)&i);
+        pthread_create((void *)&drivers[i], NULL, driverTask, (void *)&i);
     }
 
     int cars[NUM_CARS];
     for (int i = 0; i < NUM_CARS; i++)
     {
-        pthread_create((void*)&cars[i], NULL, carTask, (void *)&i);
+        pthread_create((void *)&cars[i], NULL, carTask, (void *)&i);
     }
 
     pthread_join(parkTask, NULL);
@@ -108,43 +119,49 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+// Car task and driver task should be wrapped in a do while (while there are visitors in park; numVisited < 60)
 void *carTask(void *args)
 {
-    sem_init(&getPassenger, 0, 3);
-    sem_init(&seatTaken, 0, 3);
-    sem_init(&passengerSeated, 0, 3);
-    sem_init(&wakeupDriver, 0, 4);
     int carID = *(int *)args;
 
-    pthread_mutex_lock(&fillSeat[carID]);
-    sem_post(&getPassenger);
-    sem_wait(&seatTaken);
+    // Sem_t array of 3
+    // For loop 3 times
+    // 3rd time, get the driver
+    // Mailbox
+    // After ride done signals 3 passenger semaphore and driver semaphore
+    do
+    {
+        pthread_mutex_lock(&fillSeat[carID]);
+        sem_post(&getPassenger);
+        // Get visitors local semaphore
+        sem_wait(&seatTaken);
 
-    sem_post(&passengerSeated);
+        sem_post(&passengerSeated);
 
-    pthread_mutex_lock(&needDriverMutex);
-    sem_post(&wakeupDriver);
+        pthread_mutex_lock(&needDriverMutex);
+        sem_post(&wakeupDriver);
 
-    pthread_mutex_unlock(&needDriverMutex);
-    pthread_mutex_unlock(&fillSeat[carID]);
+        pthread_mutex_unlock(&needDriverMutex);
+        pthread_mutex_unlock(&fillSeat[carID]);
+    } while (myPark.numExitedPark < 60);
 
     return 0;
 }
 
 void *driverTask(void *args)
 {
-    //int driverID = *(int *)args;
+    // int driverID = *(int *)args;
+    // Pass semaphore to car and have car pass ID to driver
+    do
+    {
+        sem_wait(&wakeupDriver);
+    } while (myPark.numExitedPark < 60);
+
     return 0;
 }
 
 void *visitorTask(void *args)
 {
-    sem_init(&needTicket, 0, MAX_TICKETS);
-    sem_init(&wakeupDriver, 0, NUM_DRIVERS);
-    sem_init(&ticketReady, 0, MAX_TICKETS);
-    sem_init(&needTicket, 0, MAX_TICKETS);
-    sem_init(&buyTicket, 0, MAX_TICKETS);
-
     // Add visitors to the outside of park
     pthread_mutex_lock(&parkMutex);
     myPark.numOutsidePark++;
