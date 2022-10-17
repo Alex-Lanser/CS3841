@@ -68,14 +68,18 @@ int main(int argc, char *argv[])
     // start park
     pthread_t parkTask;
     pthread_create(&parkTask, NULL, jurassicTask, NULL);
+    pthread_mutex_init(&getTicketMutex, NULL);
+    pthread_mutex_init(&needDriverMutex, NULL);
 
     sem_init(&room_in_park, 0, 20);
     sem_init(&room_in_museum, 0, 3);
     sem_init(&room_in_giftshop, 0, 3);
     sem_init(&tickets, 0, MAX_TICKETS);
-
-    pthread_mutex_init(&getTicketMutex, NULL);
-    pthread_mutex_init(&needDriverMutex, NULL);
+    sem_init(&needTicket, 0, MAX_TICKETS);
+    sem_init(&wakeupDriver, 0, NUM_DRIVERS);
+    sem_init(&ticketReady, 0, MAX_TICKETS);
+    sem_init(&needTicket, 0, MAX_TICKETS);
+    sem_init(&buyTicket, 0, MAX_TICKETS);
 
     sem_init(&getPassenger, 0, 0);    // Signal semaphore
     sem_init(&seatTaken, 0, 0);       // Signal semaphore
@@ -151,12 +155,15 @@ void *carTask(void *args)
 void *driverTask(void *args)
 {
     // int driverID = *(int *)args;
+<<<<<<< HEAD
     // Pass semaphore to car and have car pass ID to driver
     do
     {
         sem_wait(&wakeupDriver);
     } while (myPark.numExitedPark < 60);
 
+=======
+>>>>>>> 59b9f69c9ef5ad1904035b6d42983dc88f0c2180
     return 0;
 }
 
