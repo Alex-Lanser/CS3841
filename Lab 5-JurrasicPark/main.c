@@ -52,6 +52,8 @@ sem_t getPassenger;
 sem_t seatTaken;
 sem_t passengerSeated;
 
+sem_t gMailbox;
+
 pthread_mutex_t getTicketMutex;
 pthread_mutex_t needDriverMutex;
 
@@ -126,27 +128,32 @@ int main(int argc, char *argv[])
 // Car task and driver task should be wrapped in a do while (while there are visitors in park; numVisited < 60)
 void *carTask(void *args)
 {
-    int carID = *(int *)args;
-
     // Sem_t array of 3
     // For loop 3 times
     // 3rd time, get the driver
     // Mailbox
-    // After ride done signals 3 passenger semaphore and driver semaphore
+    // After ride done, signals 3 passenger semaphore and driver semaphore
+
+    int carID = *(int *)args;
+    sem_t passengerSems[3];
+
     do
     {
-        pthread_mutex_lock(&fillSeat[carID]);
-        sem_post(&getPassenger);
-        // Get visitors local semaphore
-        sem_wait(&seatTaken);
+        for (int i = 0; i < 3; i++)
+        {
+            pthread_mutex_lock(&fillSeat[carID]);
+            sem_post(&getPassenger);
+            // Get visitors local semaphore
+            sem_wait(&seatTaken);
 
-        sem_post(&passengerSeated);
+            sem_post(&passengerSeated);
 
-        pthread_mutex_lock(&needDriverMutex);
-        sem_post(&wakeupDriver);
+            pthread_mutex_lock(&needDriverMutex);
+            sem_post(&wakeupDriver);
 
-        pthread_mutex_unlock(&needDriverMutex);
-        pthread_mutex_unlock(&fillSeat[carID]);
+            pthread_mutex_unlock(&needDriverMutex);
+            pthread_mutex_unlock(&fillSeat[carID]);
+        }
     } while (myPark.numExitedPark < 60);
 
     return 0;
@@ -155,20 +162,18 @@ void *carTask(void *args)
 void *driverTask(void *args)
 {
     // int driverID = *(int *)args;
-<<<<<<< HEAD
-    // Pass semaphore to car and have car pass ID to driver
+    // Pass semaphore to car and have car pass carID to driver
     do
     {
         sem_wait(&wakeupDriver);
     } while (myPark.numExitedPark < 60);
 
-=======
->>>>>>> 59b9f69c9ef5ad1904035b6d42983dc88f0c2180
     return 0;
 }
 
 void *visitorTask(void *args)
 {
+    sem_t mySem;
     // Add visitors to the outside of park
     pthread_mutex_lock(&parkMutex);
     myPark.numOutsidePark++;
