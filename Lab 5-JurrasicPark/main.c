@@ -52,6 +52,7 @@ sem_t getPassenger;
 sem_t seatTaken;
 sem_t passengerSeated;
 sem_t needPassenger;
+sem_t needDriver;
 
 sem_t mailboxReady;
 sem_t mailAcquired;
@@ -94,6 +95,7 @@ int main(int argc, char *argv[])
     sem_init(&needTicket, 0, 0);      // Signal semaphore
     sem_init(&ticketReady, 0, 0);     // Signal semaphore
     sem_init(&buyTicket, 0, 0);       // Signal semaphore
+    sem_init(&needDriver, 0, 0);      // Signal semaphore
 
     // wait for park to get initialized...
     while (!begin)
@@ -147,6 +149,7 @@ void *carTask(void *args)
             {
                 pthread_mutex_lock(&needDriverMutex);
                 sem_post(&wakeupDriver);
+                sem_post(&needDriver);
                 driverSem = gMailbox;
                 pthread_mutex_unlock(&needDriverMutex);
             }
@@ -174,7 +177,7 @@ void *driverTask(void *args)
     do
     {
         sem_wait(&wakeupDriver);
-        if (sem_trywait(&needTicket) == 0)
+        if (sem_trywait(&needTicket) == 0) // Need to sell tickets
         {
             // assign myPark.driver[id] = -1
             pthread_mutex_lock(&parkMutex);
@@ -184,7 +187,7 @@ void *driverTask(void *args)
             // simulate time to print ticket with sleep
             sleep(randomNumber(1, 4));
 
-            // post to ticekt ready
+            // post to ticket ready
             pthread_mutex_lock(&getTicketMutex);
             sem_post(&ticketReady);
             // wait on buy ticket
@@ -195,9 +198,8 @@ void *driverTask(void *args)
             pthread_mutex_lock(&parkMutex);
             myPark.drivers[driverID] = 0;
             pthread_mutex_unlock(&parkMutex);
-
         }
-        else if (0 /*need driver*/)
+        else if (sem_trywait(&needDriver) == 0) // Need to drive car
         {
         }
 
@@ -293,8 +295,6 @@ void *visitorTask(void *args)
     sem_post(&seatTaken);
 
     sem_wait(&mySem);
-
-    sleep(randomNumber(1, 3));
 
     pthread_mutex_lock(&parkMutex);
     myPark.numInCars--;
