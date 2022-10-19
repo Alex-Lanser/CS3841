@@ -204,6 +204,7 @@ void *visitorTask(void *args)
 {
     sem_t mySem;
     sem_init(&mySem, 0, 0);
+    int carID = carMailbox;
 
     /*
  Add visitors to outside of park
@@ -284,6 +285,9 @@ void *visitorTask(void *args)
     sem_post(&mailboxReady);
     sem_wait(&mailAcquired);
     pthread_mutex_unlock(&mailboxMutex);
+
+/*     pthread_mutex_lock(&rideOver[carID]);
+    pthread_mutex_unlock(&rideOver[carID]); */
 
     sleep(randomNumber(1, 3));
 
