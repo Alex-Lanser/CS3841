@@ -173,34 +173,32 @@ void *driverTask(void *args)
     // Pass semaphore to car and have car pass carID to driver
     sem_t mySem;
     sem_init(&mySem, 0, 0);
-    int carID = carMailbox;
+    // int carID = carMailbox;
     do
     {
         sem_wait(&wakeupDriver);
         if (sem_trywait(&needTicket) == 0) // Need to sell tickets
-        {
-            // assign myPark.driver[id] = -1
+        {   
+            // assign myPark.driver[id] = -1 (Sell tickets)
             pthread_mutex_lock(&parkMutex);
             myPark.drivers[driverID] = -1;
             pthread_mutex_unlock(&parkMutex);
 
             // simulate time to print ticket with sleep
-            sleep(randomNumber(1, 4));
+            sleep(randomNumber(1, 3));
 
             // post to ticket ready
-            pthread_mutex_lock(&getTicketMutex);
             sem_post(&ticketReady);
             // wait on buy ticket
             sem_wait(&buyTicket);
-            pthread_mutex_unlock(&getTicketMutex);
 
-            // assign myPark.driver[id] = 0. Go back to sleep
+            // assign myPark.driver[id] = 0 (Go back to sleep)
             pthread_mutex_lock(&parkMutex);
             myPark.drivers[driverID] = 0;
             pthread_mutex_unlock(&parkMutex);
         }
         else if (sem_trywait(&needDriver) == 0) // Need to drive car
-        {
+        {   
         }
 
     } while (myPark.numExitedPark < 60);
@@ -212,7 +210,6 @@ void *visitorTask(void *args)
 {
     sem_t mySem;
     sem_init(&mySem, 0, 0);
-    int carID = carMailbox;
 
     /*
  Add visitors to outside of park
