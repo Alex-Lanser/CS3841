@@ -83,11 +83,6 @@ int main(int argc, char *argv[])
     sem_init(&room_in_museum, 0, 3);
     sem_init(&room_in_giftshop, 0, 3);
     sem_init(&tickets, 0, MAX_TICKETS);
-    sem_init(&needTicket, 0, MAX_TICKETS);
-    sem_init(&wakeupDriver, 0, NUM_DRIVERS);
-    sem_init(&ticketReady, 0, MAX_TICKETS);
-    sem_init(&needTicket, 0, MAX_TICKETS);
-    sem_init(&buyTicket, 0, MAX_TICKETS);
 
     sem_init(&getPassenger, 0, 0);    // Signal semaphore
     sem_init(&seatTaken, 0, 0);       // Signal semaphore
@@ -96,12 +91,9 @@ int main(int argc, char *argv[])
     sem_init(&mailboxReady, 0, 0);    // Signal semaphore
     sem_init(&mailAcquired, 0, 0);    // Signal semaphore
     sem_init(&needPassenger, 0, 0);   // Signal semaphore
-
-    sem_init(&needTicket, 0, MAX_TICKETS);
-    sem_init(&wakeupDriver, 0, NUM_DRIVERS);
-    sem_init(&ticketReady, 0, MAX_TICKETS);
-    sem_init(&needTicket, 0, MAX_TICKETS);
-    sem_init(&buyTicket, 0, MAX_TICKETS);
+    sem_init(&needTicket, 0, 0);      // Signal semaphore
+    sem_init(&ticketReady, 0, 0);     // Signal semaphore
+    sem_init(&buyTicket, 0, 0);       // Signal semaphore
 
     // wait for park to get initialized...
     while (!begin)
@@ -134,15 +126,8 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-// Car task and driver task should be wrapped in a do while (while there are visitors in park; numVisited < 60)
 void *carTask(void *args)
 {
-    // Sem_t array of 3
-    // For loop 3 times
-    // 3rd time, get the driver
-    // Mailbox
-    // After ride done, signals 3 passenger semaphore and driver semaphore
-
     int carID = *(int *)args;
     sem_t *passengerSems[3];
     sem_t *driverSem;
@@ -156,25 +141,19 @@ void *carTask(void *args)
             sem_wait(&mailboxReady);
             passengerSems[i] = gMailbox;
             sem_post(&mailAcquired);
-
-            sem_post(&getPassenger);
-            // Get visitors local semaphore
             sem_wait(&seatTaken);
-
-            sem_post(&passengerSeated);
-
-            pthread_mutex_unlock(&fillSeat[carID]);
 
             if (i == 2) // Car is full
             {
                 pthread_mutex_lock(&needDriverMutex);
                 sem_post(&wakeupDriver);
                 driverSem = gMailbox;
-                
                 pthread_mutex_unlock(&needDriverMutex);
             }
+            pthread_mutex_unlock(&fillSeat[carID]);
         }
         pthread_mutex_lock(&rideOver[carID]);
+
         for (int i = 0; i < 3; i++)
         {
             sem_post(passengerSems[i]);
@@ -187,7 +166,7 @@ void *carTask(void *args)
 
 void *driverTask(void *args)
 {
-    // int driverID = *(int *)args;
+    int driverID = *(int *)args;
     // Pass semaphore to car and have car pass carID to driver
     sem_t mySem;
     sem_init(&mySem, 0, 0);
@@ -195,6 +174,33 @@ void *driverTask(void *args)
     do
     {
         sem_wait(&wakeupDriver);
+        if (sem_trywait(&needTicket) == 0)
+        {
+            // assign myPark.driver[id] = -1
+            pthread_mutex_lock(&parkMutex);
+            myPark.drivers[driverID] = -1;
+            pthread_mutex_unlock(&parkMutex);
+
+            // simulate time to print ticket with sleep
+            sleep(randomNumber(1, 4));
+
+            // post to ticekt ready
+            pthread_mutex_lock(&getTicketMutex);
+            sem_post(&ticketReady);
+            // wait on buy ticket
+            sem_wait(&buyTicket);
+            pthread_mutex_unlock(&getTicketMutex);
+
+            // assign myPark.driver[id] = 0. Go back to sleep
+            pthread_mutex_lock(&parkMutex);
+            myPark.drivers[driverID] = 0;
+            pthread_mutex_unlock(&parkMutex);
+
+        }
+        else if (0 /*need driver*/)
+        {
+        }
+
     } while (myPark.numExitedPark < 60);
 
     return 0;
@@ -228,15 +234,13 @@ void *visitorTask(void *args)
     /*
  Get Ticket
 */
+    sem_wait(&tickets);
     pthread_mutex_lock(&getTicketMutex);
     sem_post(&needTicket);
     sem_post(&wakeupDriver);
     sem_wait(&ticketReady);
-    sem_wait(&needTicket);
     sem_post(&buyTicket);
     pthread_mutex_unlock(&getTicketMutex);
-
-    sleep(randomNumber(1, 3));
 
     pthread_mutex_lock(&parkMutex);
     myPark.numInTicketLine--;
@@ -272,22 +276,23 @@ void *visitorTask(void *args)
     /*
  Hand ticket and get into car
 */
+
+    sem_wait(&needPassenger);
+    pthread_mutex_lock(&mailboxMutex);
+    gMailbox = &mySem;
+    sem_post(&mailboxReady);
+    sem_wait(&mailAcquired);
+    pthread_mutex_unlock(&mailboxMutex);
+
     pthread_mutex_lock(&parkMutex);
     myPark.numInCarLine--;
     myPark.numInCars++;
     myPark.numTicketsAvailable++;
     pthread_mutex_unlock(&parkMutex);
     sem_post(&tickets);
+    sem_post(&seatTaken);
 
-    pthread_mutex_lock(&mailboxMutex);
-    sem_wait(&needPassenger);
-    gMailbox = &mySem;
-    sem_post(&mailboxReady);
-    sem_wait(&mailAcquired);
-    pthread_mutex_unlock(&mailboxMutex);
-
-/*     pthread_mutex_lock(&rideOver[carID]);
-    pthread_mutex_unlock(&rideOver[carID]); */
+    sem_wait(&mySem);
 
     sleep(randomNumber(1, 3));
 
