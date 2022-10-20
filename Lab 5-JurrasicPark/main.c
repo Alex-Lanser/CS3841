@@ -173,7 +173,7 @@ void *driverTask(void *args)
     // Pass semaphore to car and have car pass carID to driver
     sem_t mySem;
     sem_init(&mySem, 0, 0);
-    // int carID = carMailbox;
+    int carID = carMailbox;
     do
     {
         sem_wait(&wakeupDriver);
