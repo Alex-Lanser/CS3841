@@ -178,7 +178,7 @@ void *driverTask(void *args)
     {
         sem_wait(&wakeupDriver);
         if (sem_trywait(&needTicket) == 0) // Need to sell tickets
-        {   
+        {
             // assign myPark.driver[id] = -1 (Sell tickets)
             pthread_mutex_lock(&parkMutex);
             myPark.drivers[driverID] = -1;
@@ -198,7 +198,7 @@ void *driverTask(void *args)
             pthread_mutex_unlock(&parkMutex);
         }
         else if (sem_trywait(&needDriver) == 0) // Need to drive car
-        {   
+        {
         }
 
     } while (myPark.numExitedPark < 60);
