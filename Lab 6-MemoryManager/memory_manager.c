@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "memory_manager.h"
 
-/* 
+/*
  * Using static causes the compiler to
  * limit visibility of the variables to this file only
  * This can be used to simulate 'private' variables in c
@@ -17,12 +17,15 @@ static int allocation_count = 0;
  *         Parameters: start - the start of the memory to manage
  *                     size - the size of the memory to manage
  *         Returns: void
- */ 
-void mmInit(void* start, int size) 
+ */
+void mmInit(void *start, int size)
 {
 	allocation_count = 0;
 
 	// TODO more initialization needed
+	// Keep track of start location as static global variable
+	// Keep track of size as static global variable
+	// Zero out the data
 }
 
 /* mmDestroy()
@@ -36,47 +39,46 @@ void mmInit(void* start, int size)
  *           and frees
  *         Parameters: None
  *         Returns: void
- */ 
+ */
 void mmDestroy()
 {
-
 }
 
 /* mymalloc_ff()
- *     Requests a block of memory be allocated using 
+ *     Requests a block of memory be allocated using
  *         first fit placement algorithm
  *     The memory manager must be initialized (mmInit)
  *         for this call to succeed
  *         Parameters: nbytes - the number of bytes in the requested memory
  *         Returns: void* - a pointer to the start of the allocated space
  */
-void* mymalloc_ff(int nbytes)
+void *mymalloc_ff(int nbytes)
 {
 	return NULL;
 }
 
 /* mymalloc_wf()
- *     Requests a block of memory be allocated using 
+ *     Requests a block of memory be allocated using
  *         worst fit placement algorithm
  *     The memory manager must be initialized (mmInit)
  *         for this call to succeed
  *         Parameters: nbytes - the number of bytes in the requested memory
  *         Returns: void* - a pointer to the start of the allocated space
  */
-void* mymalloc_wf(int nbytes)
+void *mymalloc_wf(int nbytes)
 {
 	return NULL;
 }
 
 /* mymalloc_bf()
- *     Requests a block of memory be allocated using 
+ *     Requests a block of memory be allocated using
  *         best fit placement algorithm
  *     The memory manager must be initialized (mmInit)
  *         for this call to succeed
  *         Parameters: nbytes - the number of bytes in the requested memory
  *         Returns: void* - a pointer to the start of the allocated space
  */
-void* mymalloc_bf(int nbytes)
+void *mymalloc_bf(int nbytes)
 {
 	return NULL;
 }
@@ -93,15 +95,14 @@ void* mymalloc_bf(int nbytes)
  *             - memory manager has been destroyed
  *             - ptr is not allocated (e.g. double free)
  */
-void myfree(void* ptr)
+void myfree(void *ptr)
 {
-
 }
 
 /* get_allocated_space()
  *     Retrieve the current amount of space allocated by the memory manager (in bytes)
  *         Parameters: None
- *         Returns: int - the current number of allocated bytes 
+ *         Returns: int - the current number of allocated bytes
  */
 int get_allocated_space()
 {
@@ -112,7 +113,7 @@ int get_allocated_space()
  *     Retrieve the current amount of available space in the memory manager (in bytes)
  *         (e.g. sum of all free blocks)
  *         Parameters: None
- *         Returns: int - the current number of free bytes 
+ *         Returns: int - the current number of free bytes
  */
 int get_remaining_space()
 {

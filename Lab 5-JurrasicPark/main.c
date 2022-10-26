@@ -144,7 +144,10 @@ void *carTask(void *args)
             passengerSems[i] = gMailbox;
             sem_post(&mailAcquired);
             sem_wait(&seatTaken);
-
+            pthread_mutex_lock(&parkMutex);
+            myPark.cars[carID].passengers++;
+            pthread_mutex_unlock(&parkMutex);
+            
             if (i == 2) // Car is full
             {
                 pthread_mutex_lock(&needDriverMutex);
@@ -157,7 +160,7 @@ void *carTask(void *args)
         }
         pthread_mutex_lock(&rideOver[carID]);
 
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++) 
         {
             sem_post(passengerSems[i]);
         }
@@ -199,6 +202,9 @@ void *driverTask(void *args)
         }
         else if (sem_trywait(&needDriver) == 0) // Need to drive car
         {
+            pthread_mutex_lock(&parkMutex);
+            myPark.drivers[driverID] = carID;
+            pthread_mutex_lock(&parkMutex);
         }
 
     } while (myPark.numExitedPark < 60);
