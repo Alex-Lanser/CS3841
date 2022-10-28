@@ -64,8 +64,6 @@ pthread_mutex_t getTicketMutex;
 pthread_mutex_t needDriverMutex;
 pthread_mutex_t mailboxMutex;
 
-
-
 int randomNumber(int lower, int upper)
 {
     int num = (rand() % (upper - lower + 1)) + lower;
@@ -142,7 +140,7 @@ void *carTask(void *args)
     int carID = *(int *)args;
     sem_t *passengerSems[3];
     sem_t *driverSem;
-    
+
     do
     {
         for (int i = 0; i < 3; i++)
@@ -155,7 +153,9 @@ void *carTask(void *args)
             sem_wait(&seatTaken);
             pthread_mutex_lock(&parkMutex);
             myPark.cars[carID].passengers++;
+            myPark.numTicketsAvailable++;
             pthread_mutex_unlock(&parkMutex);
+            sem_post(&tickets);
 
             if (i == 2) // Car is full
             {
@@ -217,7 +217,7 @@ void *driverTask(void *args)
         {
             carID = carMailbox;
             pthread_mutex_lock(&parkMutex);
-            myPark.drivers[driverID] = carID+1;
+            myPark.drivers[driverID] = carID + 1;
             pthread_mutex_unlock(&parkMutex);
 
             pthread_mutex_lock(&mailboxMutex);
@@ -320,9 +320,7 @@ void *visitorTask(void *args)
     pthread_mutex_lock(&parkMutex);
     myPark.numInCarLine--;
     myPark.numInCars++;
-    myPark.numTicketsAvailable++;
     pthread_mutex_unlock(&parkMutex);
-    sem_post(&tickets);
     sem_post(&seatTaken);
 
     sem_wait(&mySem);
