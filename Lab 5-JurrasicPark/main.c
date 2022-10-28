@@ -27,7 +27,7 @@
 #include "park.h"
 
 // Jurassic Park
-volatile int begin;
+extern volatile int begin;
 extern JPARK myPark;
 extern pthread_mutex_t parkMutex;            // mutex park variable access
 extern pthread_mutex_t fillSeat[NUM_CARS];   // (signal) seat ready to fill
@@ -53,6 +53,7 @@ sem_t seatTaken;
 sem_t passengerSeated;
 sem_t needPassenger;
 sem_t needDriver;
+sem_t driverReady;
 
 sem_t mailboxReady;
 sem_t mailAcquired;
@@ -63,9 +64,10 @@ pthread_mutex_t getTicketMutex;
 pthread_mutex_t needDriverMutex;
 pthread_mutex_t mailboxMutex;
 
+
+
 int randomNumber(int lower, int upper)
 {
-    srand(time(0));
     int num = (rand() % (upper - lower + 1)) + lower;
     return num;
 }
@@ -73,6 +75,7 @@ int randomNumber(int lower, int upper)
 int main(int argc, char *argv[])
 {
     begin = 0;
+    srand(time(0));
     // start park
     pthread_t parkTask;
     pthread_create(&parkTask, NULL, jurassicTask, NULL);
@@ -80,9 +83,9 @@ int main(int argc, char *argv[])
     pthread_mutex_init(&needDriverMutex, NULL);
     pthread_mutex_init(&mailboxMutex, NULL);
 
-    sem_init(&room_in_park, 0, 20);
-    sem_init(&room_in_museum, 0, 3);
-    sem_init(&room_in_giftshop, 0, 3);
+    sem_init(&room_in_park, 0, MAX_IN_PARK);
+    sem_init(&room_in_museum, 0, MAX_IN_MUSEUM);
+    sem_init(&room_in_giftshop, 0, MAX_IN_GIFTSHOP);
     sem_init(&tickets, 0, MAX_TICKETS);
 
     sem_init(&getPassenger, 0, 0);    // Signal semaphore
@@ -96,6 +99,7 @@ int main(int argc, char *argv[])
     sem_init(&ticketReady, 0, 0);     // Signal semaphore
     sem_init(&buyTicket, 0, 0);       // Signal semaphore
     sem_init(&needDriver, 0, 0);      // Signal semaphore
+    sem_init(&driverReady, 0, 0);
 
     // wait for park to get initialized...
     while (!begin)
@@ -104,23 +108,28 @@ int main(int argc, char *argv[])
     printf("\n\nWelcome to Jurassic Park\n\n");
 
     //?? create car, driver, and visitor tasks here
-    int visitors[NUM_VISITORS];
+    pthread_t visitors[NUM_VISITORS];
+    int visitorsID[NUM_VISITORS];
     for (int i = 0; i < NUM_VISITORS; i++)
     {
-        pthread_create((void *)&visitors[i], NULL, visitorTask, NULL);
-        sleep(randomNumber(1, 2));
+        visitorsID[i] = i;
+        pthread_create(&visitors[i], NULL, visitorTask, &visitorsID[i]);
     }
 
-    int drivers[NUM_DRIVERS];
+    pthread_t drivers[NUM_DRIVERS];
+    int driversID[NUM_DRIVERS];
     for (int i = 0; i < NUM_DRIVERS; i++)
     {
-        pthread_create((void *)&drivers[i], NULL, driverTask, (void *)&i);
+        driversID[i] = i;
+        pthread_create(&drivers[i], NULL, driverTask, &driversID[i]);
     }
 
-    int cars[NUM_CARS];
+    pthread_t cars[NUM_CARS];
+    int carsID[NUM_CARS];
     for (int i = 0; i < NUM_CARS; i++)
     {
-        pthread_create((void *)&cars[i], NULL, carTask, (void *)&i);
+        carsID[i] = i;
+        pthread_create(&cars[i], NULL, carTask, &carsID[i]);
     }
 
     pthread_join(parkTask, NULL);
@@ -133,7 +142,7 @@ void *carTask(void *args)
     int carID = *(int *)args;
     sem_t *passengerSems[3];
     sem_t *driverSem;
-    carMailbox = carID;
+    
     do
     {
         for (int i = 0; i < 3; i++)
@@ -147,20 +156,25 @@ void *carTask(void *args)
             pthread_mutex_lock(&parkMutex);
             myPark.cars[carID].passengers++;
             pthread_mutex_unlock(&parkMutex);
-            
+
             if (i == 2) // Car is full
             {
                 pthread_mutex_lock(&needDriverMutex);
+                carMailbox = carID;
                 sem_post(&wakeupDriver);
                 sem_post(&needDriver);
+                sem_wait(&mailboxReady);
                 driverSem = gMailbox;
+                sem_post(&mailAcquired);
+                sem_wait(&driverReady);
                 pthread_mutex_unlock(&needDriverMutex);
             }
+            printf("THIS HAPPENED %d\n", i);
             pthread_mutex_unlock(&fillSeat[carID]);
         }
         pthread_mutex_lock(&rideOver[carID]);
 
-        for (int i = 0; i < 3; i++) 
+        for (int i = 0; i < 3; i++)
         {
             sem_post(passengerSems[i]);
         }
@@ -176,7 +190,7 @@ void *driverTask(void *args)
     // Pass semaphore to car and have car pass carID to driver
     sem_t mySem;
     sem_init(&mySem, 0, 0);
-    int carID = carMailbox;
+    int carID;
     do
     {
         sem_wait(&wakeupDriver);
@@ -202,9 +216,23 @@ void *driverTask(void *args)
         }
         else if (sem_trywait(&needDriver) == 0) // Need to drive car
         {
+            carID = carMailbox;
             pthread_mutex_lock(&parkMutex);
-            myPark.drivers[driverID] = carID;
+            myPark.drivers[driverID] = carID+1;
+            pthread_mutex_unlock(&parkMutex);
+
+            pthread_mutex_lock(&mailboxMutex);
+            gMailbox = &mySem;
+            sem_post(&mailboxReady);
+            sem_wait(&mailAcquired);
+            pthread_mutex_unlock(&mailboxMutex);
+
+            sem_post(&driverReady);
+            sem_wait(&mySem);
+
             pthread_mutex_lock(&parkMutex);
+            myPark.drivers[driverID] = 0;
+            pthread_mutex_unlock(&parkMutex);
         }
 
     } while (myPark.numExitedPark < 60);
@@ -216,6 +244,7 @@ void *visitorTask(void *args)
 {
     sem_t mySem;
     sem_init(&mySem, 0, 0);
+    sleep(randomNumber(1, 30));
 
     /*
  Add visitors to outside of park
