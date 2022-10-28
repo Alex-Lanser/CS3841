@@ -53,7 +53,6 @@ sem_t seatTaken;
 sem_t passengerSeated;
 sem_t needPassenger;
 sem_t needDriver;
-sem_t driverReady;
 
 sem_t mailboxReady;
 sem_t mailAcquired;
@@ -97,7 +96,6 @@ int main(int argc, char *argv[])
     sem_init(&ticketReady, 0, 0);     // Signal semaphore
     sem_init(&buyTicket, 0, 0);       // Signal semaphore
     sem_init(&needDriver, 0, 0);      // Signal semaphore
-    sem_init(&driverReady, 0, 0);
 
     // wait for park to get initialized...
     while (!begin)
@@ -166,7 +164,6 @@ void *carTask(void *args)
                 sem_wait(&mailboxReady);
                 driverSem = gMailbox;
                 sem_post(&mailAcquired);
-                sem_wait(&driverReady);
                 pthread_mutex_unlock(&needDriverMutex);
             }
             pthread_mutex_unlock(&fillSeat[carID]);
@@ -226,7 +223,6 @@ void *driverTask(void *args)
             sem_wait(&mailAcquired);
             pthread_mutex_unlock(&mailboxMutex);
 
-            sem_post(&driverReady);
             sem_wait(&mySem);
 
             pthread_mutex_lock(&parkMutex);
