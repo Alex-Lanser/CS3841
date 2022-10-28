@@ -169,7 +169,6 @@ void *carTask(void *args)
                 sem_wait(&driverReady);
                 pthread_mutex_unlock(&needDriverMutex);
             }
-            printf("THIS HAPPENED %d\n", i);
             pthread_mutex_unlock(&fillSeat[carID]);
         }
         pthread_mutex_lock(&rideOver[carID]);
