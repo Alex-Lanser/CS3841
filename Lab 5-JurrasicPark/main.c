@@ -150,7 +150,6 @@ void *carTask(void *args)
             sem_post(&mailAcquired);
             sem_wait(&seatTaken);
             pthread_mutex_lock(&parkMutex);
-            myPark.cars[carID].passengers++;
             myPark.numTicketsAvailable++;
             pthread_mutex_unlock(&parkMutex);
             sem_post(&tickets);
@@ -166,7 +165,7 @@ void *carTask(void *args)
                 sem_post(&mailAcquired);
                 pthread_mutex_unlock(&needDriverMutex);
             }
-            pthread_mutex_unlock(&fillSeat[carID]);
+            pthread_mutex_unlock(&seatFilled[carID]);
         }
         pthread_mutex_lock(&rideOver[carID]);
 
@@ -324,7 +323,6 @@ void *visitorTask(void *args)
     pthread_mutex_lock(&parkMutex);
     myPark.numInCars--;
     myPark.numInGiftLine++;
-    myPark.numRidesTaken++;
     pthread_mutex_unlock(&parkMutex);
 
     sleep(randomNumber(1, 3));
