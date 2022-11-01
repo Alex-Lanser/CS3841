@@ -8,6 +8,8 @@
  * This can be used to simulate 'private' variables in c
  */
 static int allocation_count = 0;
+static int globalStart = 0;
+static int globalSize = 0;
 
 /* TODO Define additional structure definitions here */
 
@@ -24,7 +26,9 @@ void mmInit(void *start, int size)
 
 	// TODO more initialization needed
 	// Keep track of start location as static global variable
+	globalStart = start;
 	// Keep track of size as static global variable
+	globalSize = size;
 	// Zero out the data
 }
 
