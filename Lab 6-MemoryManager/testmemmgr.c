@@ -30,7 +30,7 @@ int main()
 	//   shouldn't fail
 	char* ptr2 = mymalloc_wf(45);
 	if(ptr2 == NULL) {
-		printf("ptr2 - mymalloc_ff(45) failed\n");
+		printf("ptr2 - mymalloc_wf(45) failed\n");
 		exit(EXIT_FAILURE);
 	}
 	strncpy(ptr2, "GOODBYE", 45);

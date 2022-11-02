@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "memory_manager.h"
 
 /*
@@ -7,12 +8,20 @@
  * limit visibility of the variables to this file only
  * This can be used to simulate 'private' variables in c
  */
-static int allocation_count = 0;
-static int fragment_count = 1;
-static int globalStart = 0;
-static int globalSize = 0;
+static int allocation_count;
+static int fragment_count;
 
-int allocatedSpace;
+pthread_mutex_t malloc_mutex;
+
+struct block
+{
+	void *start;
+	int size;
+	int type; // 0 is free, 1 is allocated
+	struct block *next;
+} block;
+
+struct block *top;
 
 /* TODO Define additional structure definitions here */
 
@@ -25,13 +34,15 @@ int allocatedSpace;
  */
 void mmInit(void *start, int size)
 {
-	// TODO more initialization needed
-	// Keep track of start location as static global variable
-	globalStart = start;
-	// Keep track of size as static global variable
-	globalSize = size;
+	struct block *b = malloc(sizeof(block));
+	b->start = start;
+	b->size = size;
+	b->type = 0;
+	b->next = NULL;
+	top = b;
 	pthread_mutex_init(&malloc_mutex, NULL);
-	// Zero out the data
+	allocation_count = 0;
+	fragment_count = 1;
 }
 
 /* mmDestroy()
@@ -62,8 +73,46 @@ void mmDestroy()
  */
 void *mymalloc_ff(int nbytes)
 {
+	pthread_mutex_lock(&malloc_mutex);
 	allocation_count++;
-	allocatedSpace += nbytes;
+	struct block *p = top;
+	while (p != NULL)
+	{
+		if (p->size >= nbytes && p->type == 0) // There is room for block and it is free space
+		{
+			break;
+		}
+		p = p->next;
+	}
+	if (p == NULL) // There are no open blockss
+	{
+		pthread_mutex_unlock(&malloc_mutex);
+		return NULL;
+	}
+	else if (p->size == nbytes) // Open space is the exact size of bytes needed
+	{
+		p->type = 1;
+		pthread_mutex_unlock(&malloc_mutex);
+		return p->start;
+	}
+	else // Place bytes into open space
+	{
+		struct block *b = malloc(sizeof(block));
+		b->size = nbytes;
+		b->start = p->start;
+		b->type = 1;
+		b->next = p;
+
+		p->start = p->start + nbytes;
+		p->size = p->size - nbytes;
+		if (p == top)
+		{
+			top = b;
+		}
+		pthread_mutex_unlock(&malloc_mutex);
+		return b->start;
+	}
+	pthread_mutex_unlock(&malloc_mutex);
 	return NULL;
 }
 
@@ -77,6 +126,47 @@ void *mymalloc_ff(int nbytes)
  */
 void *mymalloc_wf(int nbytes)
 {
+	pthread_mutex_lock(&malloc_mutex);
+	allocation_count++;
+	struct block *p = top;
+	while (p != NULL)
+	{
+		if (p->size >= nbytes && p->type == 0) // There is space and it is free
+		{
+			break;
+		}
+		p = p->next;
+	}
+	if (p == NULL) // There are no open blocks
+	{
+		pthread_mutex_unlock(&malloc_mutex);
+		return NULL;
+	}
+
+	else if (p->size > nbytes) // Larger than the space needed (Needed for worst fit)
+	{
+		struct block *b = malloc(sizeof(block));
+		b->size = nbytes;
+		b->start = p->start;
+		b->type = 1;
+		b->next = p;
+
+		p->start = p->start + nbytes;
+		p->size = p->size - nbytes;
+		if (p == top)
+		{
+			top = b;
+		}
+		pthread_mutex_unlock(&malloc_mutex);
+		return b->start;
+	}
+	else // The space needed is the same size as the space available
+	{
+		p->type = 1;
+		pthread_mutex_unlock(&malloc_mutex);
+		return p->start;
+	}
+	pthread_mutex_unlock(&malloc_mutex);
 	return NULL;
 }
 
@@ -90,6 +180,47 @@ void *mymalloc_wf(int nbytes)
  */
 void *mymalloc_bf(int nbytes)
 {
+	pthread_mutex_lock(&malloc_mutex);
+	allocation_count++;
+	struct block *p = top;
+	while (p != NULL)
+	{
+		if (p->size >= nbytes && p->type == 0) // There is space and it is free
+		{
+			break;
+		}
+		p = p->next;
+	}
+	if (p == NULL) // There are no open blocks
+	{
+		pthread_mutex_unlock(&malloc_mutex);
+		return NULL;
+	}
+
+	else if (p->size == nbytes) // The free space is the same size as the space needed
+	{
+		p->type = 1;
+		pthread_mutex_unlock(&malloc_mutex);
+		return p->start;
+	}
+	else // The space free is greater than the needed space
+	{
+		struct block *b = malloc(sizeof(block));
+		b->size = nbytes;
+		b->start = p->start;
+		b->type = 1;
+		b->next = p;
+
+		p->start = p->start + nbytes;
+		p->size = p->size - nbytes;
+		if (p == top)
+		{
+			top = b;
+		}
+		pthread_mutex_unlock(&malloc_mutex);
+		return b->start;
+	}
+	pthread_mutex_unlock(&malloc_mutex);
 	return NULL;
 }
 
@@ -116,6 +247,14 @@ void myfree(void *ptr)
  */
 int get_allocated_space()
 {
+	struct block *b = malloc(sizeof(block));
+	b = top;
+	int allocatedSpace;
+	while (b->type == 1)
+	{
+		allocatedSpace = b->size;
+		b = b->next;
+	}
 	return allocatedSpace;
 }
 
@@ -127,7 +266,13 @@ int get_allocated_space()
  */
 int get_remaining_space()
 {
-	return (globalSize - allocatedSpace);
+	struct block *b = malloc(sizeof(block));
+	b = top;
+	while (b->type == 1)
+	{
+		b = b->next;
+	}
+	return b->size;
 }
 
 /* get_fragment_count()
