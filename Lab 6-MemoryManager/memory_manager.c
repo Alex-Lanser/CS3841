@@ -61,6 +61,7 @@ void mmDestroy()
 void *mymalloc_ff(int nbytes)
 {
 	allocation_count++;
+	allocatedSpace += nbytes;
 	return NULL;
 }
 
@@ -74,7 +75,8 @@ void *mymalloc_ff(int nbytes)
  */
 void *mymalloc_wf(int nbytes)
 {
-	allocation_count;
+	allocation_count++;
+	allocatedSpace += nbytes;
 	return NULL;
 }
 
@@ -89,6 +91,7 @@ void *mymalloc_wf(int nbytes)
 void *mymalloc_bf(int nbytes)
 {
 	allocation_count++;
+	allocatedSpace += nbytes;
 	return NULL;
 }
 
