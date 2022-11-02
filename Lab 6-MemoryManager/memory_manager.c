@@ -11,6 +11,8 @@ static int allocation_count = 0;
 static int globalStart = 0;
 static int globalSize = 0;
 
+int allocatedSpace;
+
 /* TODO Define additional structure definitions here */
 
 /* mmInit()
@@ -58,6 +60,7 @@ void mmDestroy()
  */
 void *mymalloc_ff(int nbytes)
 {
+	allocation_count++;
 	return NULL;
 }
 
@@ -71,6 +74,7 @@ void *mymalloc_ff(int nbytes)
  */
 void *mymalloc_wf(int nbytes)
 {
+	allocation_count;
 	return NULL;
 }
 
@@ -84,6 +88,7 @@ void *mymalloc_wf(int nbytes)
  */
 void *mymalloc_bf(int nbytes)
 {
+	allocation_count++;
 	return NULL;
 }
 
@@ -110,7 +115,7 @@ void myfree(void *ptr)
  */
 int get_allocated_space()
 {
-	return 0;
+	return allocatedSpace;
 }
 
 /* get_remaining_space()
@@ -121,7 +126,7 @@ int get_allocated_space()
  */
 int get_remaining_space()
 {
-	return 0;
+	return (globalSize - allocatedSpace);
 }
 
 /* get_fragment_count()
