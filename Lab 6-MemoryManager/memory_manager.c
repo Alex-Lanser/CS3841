@@ -8,8 +8,12 @@
  * This can be used to simulate 'private' variables in c
  */
 static int allocation_count = 0;
+static int fragment_count = 1;
 static int globalStart = 0;
 static int globalSize = 0;
+
+pthread_mutex_t malloc_mutex;
+
 
 /* TODO Define additional structure definitions here */
 
@@ -22,13 +26,12 @@ static int globalSize = 0;
  */
 void mmInit(void *start, int size)
 {
-	allocation_count = 0;
-
 	// TODO more initialization needed
 	// Keep track of start location as static global variable
 	globalStart = start;
 	// Keep track of size as static global variable
 	globalSize = size;
+	pthread_mutex_init(&malloc_mutex, NULL);
 	// Zero out the data
 }
 
@@ -46,6 +49,8 @@ void mmInit(void *start, int size)
  */
 void mmDestroy()
 {
+	pthread_mutex_lock(&malloc_mutex);
+	pthread_mutex_unlock(&malloc_mutex);
 }
 
 /* mymalloc_ff()
@@ -58,6 +63,8 @@ void mmDestroy()
  */
 void *mymalloc_ff(int nbytes)
 {
+	pthread_mutex_lock(&malloc_mutex);
+	pthread_mutex_unlock(&malloc_mutex);
 	return NULL;
 }
 
@@ -71,6 +78,8 @@ void *mymalloc_ff(int nbytes)
  */
 void *mymalloc_wf(int nbytes)
 {
+	pthread_mutex_lock(&malloc_mutex);
+	pthread_mutex_unlock(&malloc_mutex);
 	return NULL;
 }
 
@@ -84,6 +93,8 @@ void *mymalloc_wf(int nbytes)
  */
 void *mymalloc_bf(int nbytes)
 {
+	pthread_mutex_lock(&malloc_mutex);
+	pthread_mutex_unlock(&malloc_mutex);
 	return NULL;
 }
 
@@ -131,7 +142,7 @@ int get_remaining_space()
  */
 int get_fragment_count()
 {
-	return 0;
+	return fragment_count;
 }
 
 /* get_mymalloc_count()
