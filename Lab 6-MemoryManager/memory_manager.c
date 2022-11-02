@@ -12,8 +12,7 @@ static int fragment_count = 1;
 static int globalStart = 0;
 static int globalSize = 0;
 
-pthread_mutex_t malloc_mutex;
-
+int allocatedSpace;
 
 /* TODO Define additional structure definitions here */
 
@@ -63,8 +62,8 @@ void mmDestroy()
  */
 void *mymalloc_ff(int nbytes)
 {
-	pthread_mutex_lock(&malloc_mutex);
-	pthread_mutex_unlock(&malloc_mutex);
+	allocation_count++;
+	allocatedSpace += nbytes;
 	return NULL;
 }
 
@@ -78,8 +77,6 @@ void *mymalloc_ff(int nbytes)
  */
 void *mymalloc_wf(int nbytes)
 {
-	pthread_mutex_lock(&malloc_mutex);
-	pthread_mutex_unlock(&malloc_mutex);
 	return NULL;
 }
 
@@ -93,8 +90,6 @@ void *mymalloc_wf(int nbytes)
  */
 void *mymalloc_bf(int nbytes)
 {
-	pthread_mutex_lock(&malloc_mutex);
-	pthread_mutex_unlock(&malloc_mutex);
 	return NULL;
 }
 
@@ -121,7 +116,7 @@ void myfree(void *ptr)
  */
 int get_allocated_space()
 {
-	return 0;
+	return allocatedSpace;
 }
 
 /* get_remaining_space()
@@ -132,7 +127,7 @@ int get_allocated_space()
  */
 int get_remaining_space()
 {
-	return 0;
+	return (globalSize - allocatedSpace);
 }
 
 /* get_fragment_count()
