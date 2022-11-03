@@ -74,7 +74,6 @@ void mmDestroy()
 void *mymalloc_ff(int nbytes)
 {
 	pthread_mutex_lock(&malloc_mutex);
-	allocation_count++;
 	struct block *p = top;
 	while (p != NULL)
 	{
@@ -84,7 +83,7 @@ void *mymalloc_ff(int nbytes)
 		}
 		p = p->next;
 	}
-	if (p == NULL) // There are no open blockss
+	if (p == NULL) // There are no open blocks
 	{
 		pthread_mutex_unlock(&malloc_mutex);
 		return NULL;
@@ -93,6 +92,7 @@ void *mymalloc_ff(int nbytes)
 	{
 		p->type = 1;
 		pthread_mutex_unlock(&malloc_mutex);
+		allocation_count++;
 		return p->start;
 	}
 	else // Place bytes into open space
@@ -110,6 +110,7 @@ void *mymalloc_ff(int nbytes)
 			top = b;
 		}
 		pthread_mutex_unlock(&malloc_mutex);
+		allocation_count++;
 		return b->start;
 	}
 	pthread_mutex_unlock(&malloc_mutex);
@@ -127,7 +128,6 @@ void *mymalloc_ff(int nbytes)
 void *mymalloc_wf(int nbytes)
 {
 	pthread_mutex_lock(&malloc_mutex);
-	allocation_count++;
 	struct block *p = top;
 	while (p != NULL)
 	{
@@ -158,12 +158,14 @@ void *mymalloc_wf(int nbytes)
 			top = b;
 		}
 		pthread_mutex_unlock(&malloc_mutex);
+		allocation_count++;
 		return b->start;
 	}
 	else // The space needed is the same size as the space available
 	{
 		p->type = 1;
 		pthread_mutex_unlock(&malloc_mutex);
+		allocation_count++;
 		return p->start;
 	}
 	pthread_mutex_unlock(&malloc_mutex);
@@ -181,7 +183,6 @@ void *mymalloc_wf(int nbytes)
 void *mymalloc_bf(int nbytes)
 {
 	pthread_mutex_lock(&malloc_mutex);
-	allocation_count++;
 	struct block *p = top;
 	while (p != NULL)
 	{
@@ -201,6 +202,7 @@ void *mymalloc_bf(int nbytes)
 	{
 		p->type = 1;
 		pthread_mutex_unlock(&malloc_mutex);
+		allocation_count++;
 		return p->start;
 	}
 	else // The space free is greater than the needed space
@@ -218,6 +220,7 @@ void *mymalloc_bf(int nbytes)
 			top = b;
 		}
 		pthread_mutex_unlock(&malloc_mutex);
+		allocation_count++;
 		return b->start;
 	}
 	pthread_mutex_unlock(&malloc_mutex);
@@ -238,6 +241,9 @@ void *mymalloc_bf(int nbytes)
  */
 void myfree(void *ptr)
 {
+	struct block *b = malloc(sizeof(block));
+	b->start = ptr;
+	b->type = 0;
 }
 
 /* get_allocated_space()
