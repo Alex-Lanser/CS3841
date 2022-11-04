@@ -255,10 +255,10 @@ int get_allocated_space()
 {
 	struct block *b = malloc(sizeof(block));
 	b = top;
-	int allocatedSpace;
+	int allocatedSpace = 0;
 	while (b->type == 1)
 	{
-		allocatedSpace = b->size;
+		allocatedSpace += b->size;
 		b = b->next;
 	}
 	return allocatedSpace;
