@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <signal.h>
 #include "memory_manager.h"
 
 /*
@@ -243,7 +244,14 @@ void myfree(void *ptr)
 {
 	struct block *b = malloc(sizeof(block));
 	b->start = ptr;
-	b->type = 0;
+	if (b->type == 0) // Already free
+	{
+		raise(SIGSEGV);
+	}
+	else
+	{
+		b->type = 0;
+	}
 }
 
 /* get_allocated_space()
@@ -274,11 +282,20 @@ int get_remaining_space()
 {
 	struct block *b = malloc(sizeof(block));
 	b = top;
-	while (b->type == 1)
+	int freeSpace = 0;
+	while (b->next != NULL)
 	{
+		if (b->type == 0)
+		{
+			freeSpace += b->size;
+			b = b->next;
+		}
+		else
+		{
+		}
 		b = b->next;
 	}
-	return b->size;
+	return freeSpace;
 }
 
 /* get_fragment_count()
