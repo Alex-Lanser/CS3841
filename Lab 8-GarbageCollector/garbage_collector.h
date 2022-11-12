@@ -58,17 +58,17 @@ int add_structure_to_struct_db(struct_db_t *struct_db, struct_db_rec_t *struct _
             #nested_struct_name                                         \
     }
 
-#define REG_STRUCT(struct_db, st_name, fields_arr)                      \
-    do                                                                  \
-    {                                                                   \
-        struct_db_rec_t *rec = calloc(1, sizeof(struct_db_rec_t));      \
-        strncpy(rec->structname, #st_name, MAX_STRUCTURE_NAME_SIZE);    \
-        rec->ds_size = sizeof(st_name);                                 \
-        rec->fields = fields_arr;                                       \
-        if (add_structure_to_struct_db(struct_db, rec))                 \
-        {                                                               \
-            assert(0);                                                  \
-        }                                                               \
+#define REG_STRUCT(struct_db, st_name, fields_arr)                   \
+    do                                                               \
+    {                                                                \
+        struct_db_rec_t *rec = calloc(1, sizeof(struct_db_rec_t));   \
+        strncpy(rec->structname, #st_name, MAX_STRUCTURE_NAME_SIZE); \
+        rec->ds_size = sizeof(st_name);                              \
+        rec->fields = fields_arr;                                    \
+        if (add_structure_to_struct_db(struct_db, rec))              \
+        {                                                            \
+            assert(0);                                               \
+        }                                                            \
     } while (0);
 
 typedef struct object_db_rec object_db_rec_t;
@@ -79,6 +79,8 @@ struct object_db_rec
     void *ptr;
     unsigned int units;
     struct_db_rec_t *struct_rec;
+    mld_boolean_t is_visited; // Used for graph traversal
+    mlt_boolean_t is_root;    // Is the object a root object
 };
 
 typedef struct object_db
@@ -87,6 +89,13 @@ typedef struct object_db
     object_db_rec_t *head;
     unsigned int count;
 } object_db_t;
+
+void register_root_object(object_db_t *object_db, void *objptr, char *struct_name, unsigned int units);
+
+void set_object_as_global_root(object_db_t *object_db, void *obj_ptr);
+
+void run_algorithm(object_db_t *object_db);
+void report_leaked_objects(object_db_t *object_db);
 
 static void add_object_to_object_db(object_db_t *object_db, void *ptr, int units, struct_db_rec_t *struct_rec)
 {
